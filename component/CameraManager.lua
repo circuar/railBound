@@ -44,9 +44,14 @@ end
 function CameraManager:gameMode()
 end
 
-function CameraManager:levelSelectMode()
+function CameraManager:levelSelectMode(currentPage)
     -- set camera position
-    api.base.setEntityPosition(self.cameraBindEntity, Global.LEVEL_SELECTOR_PAGE_REFERENCE_POINT)
+    local cameraPos = Global.LEVEL_SELECTOR_PAGE_REFERENCE_POINT + math.Vector3(
+        Global.LEVEL_SELECTOR_PAGE_SPACING * (currentPage - 1),
+        0,
+        0
+    )
+    api.base.setEntityPosition(self.cameraBindEntity, cameraPos)
 
     local player = api.getSinglePlayer()
     api.base.setCameraProperty(player, Enums.CameraPropertyType.YAW, 180.0)
@@ -59,6 +64,10 @@ end
 
 function CameraManager:getCameraBindEntity()
     return CameraManager.cameraBindEntity
+end
+
+function CameraManager:setCameraPosition(position)
+    api.base.setEntityPosition(self.cameraBindEntity, position)
 end
 
 return CameraManager

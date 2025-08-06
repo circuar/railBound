@@ -1,12 +1,8 @@
 local Logger        = require "logger.Logger"
 local api           = require "api"
-local Global        = require "common.Global"
-local LevelSelector = require "game.core.LevelSelector"
-local GameUI        = require "component.GameUI"
 local Event         = require "common.Event"
-local GlobalDispatcher = require "game.GlobalDispatcher"
-
-
+local GlobalDispatcher = require "game.core.SceneDispatcher"
+local LevelSelectScene = require "game.scene.LevelSelectScene"
 
 ---@class GlobalGameManager
 ---@field private initialized boolean whether the Game Manager is already initialized
@@ -37,13 +33,12 @@ function GlobalGameManager.run()
     logger:info("global game manager run")
     if GlobalGameManager.initialized then
         logger:warn("the Game Manager has been initialized, skipped")
-    else
-        init()
+        return
     end
 
-    -- game starts showing the level selection screen by default.
-    GlobalDispatcher.dispatcher(nil, LevelSelector)
-
+    init()
+    -- game starts showing the level select screen by default.
+    GlobalDispatcher.dispatcher(nil, LevelSelectScene.instance())
 end
 
 ---exit game

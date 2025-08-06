@@ -1,3 +1,1 @@
-return {
-    levelCount = 13
-}
+return {}
