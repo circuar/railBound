@@ -6,7 +6,6 @@ local GameUI            = require "component.GameUI"
 local DispatchableScene = require "game.interface.DispatchableScene"
 local GameLoader        = require "game.core.GameLoader"
 local SceneDispatcher   = require "game.core.SceneDispatcher"
-local GameScene         = require "game.scene.GameScene"
 
 
 ---@class LevelSelectScene:DispatchableScene
@@ -44,11 +43,14 @@ local function pageDown()
     )
 end
 
+---register level select event listener
+---when player click level button, this function will be called.
+---this function will switch scene to "GameScene".
 function LevelSelectScene:registerLevelSelectListener()
     api.base.registerEventListener(Event.GLOBAL_LEVEL_SELECT, function(data)
         local selectLevelId = data.levelId
-        GameLoader.loadGame(selectLevelId)
-        SceneDispatcher.dispatcher(self, GameScene.instance())
+        local gameLoader = GameLoader.instance()
+        gameLoader:initGame(selectLevelId)
     end)
 end
 
@@ -76,7 +78,7 @@ function LevelSelectScene.instance()
 end
 
 -- override
-function LevelSelectScene:enter()
+function LevelSelectScene:onLoad()
     -- get cameraManager instance
     local cameraManager = CameraManager.instance()
     cameraManager:levelSelectMode(self.currentPage)
@@ -84,7 +86,7 @@ function LevelSelectScene:enter()
 end
 
 -- override
-function LevelSelectScene:exit()
+function LevelSelectScene:onExit()
     GameUI.hideLevelSelectUI()
 end
 

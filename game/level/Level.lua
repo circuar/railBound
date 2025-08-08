@@ -30,8 +30,5 @@ function Level:destroy()
     
 end
 
-function Level:resetLevel()
-    
-end
 
 return Level

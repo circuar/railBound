@@ -21,11 +21,11 @@ function LevelManager.instance()
     return instance
 end
 
-function LevelManager:bind(level)
+function LevelManager:loadLevel(level)
     self.levelInstance = level
 end
 
-function LevelManager:unbind()
+function LevelManager:unLoad()
     self.levelInstance = nil
 end
 

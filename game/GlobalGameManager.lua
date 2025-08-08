@@ -1,8 +1,10 @@
 local Logger        = require "logger.Logger"
 local api           = require "api"
 local Event         = require "common.Event"
-local GlobalDispatcher = require "game.core.SceneDispatcher"
+local SceneDispatcher  = require "game.core.SceneDispatcher"
+local SceneNameEnum    = require "common.enum.SceneNameEnum"
 local LevelSelectScene = require "game.scene.LevelSelectScene"
+local GameScene        = require "game.scene.GameScene"
 
 ---@class GlobalGameManager
 ---@field private initialized boolean whether the Game Manager is already initialized
@@ -17,17 +19,17 @@ local function init()
     -- register exit game event
     api.base.registerEventListener(Event.EVENT_EXIT_GAME, GlobalGameManager.exit)
 
+    -- initialize sceneDispatcher
+    local sceneDispatcher = SceneDispatcher.instance()
+    sceneDispatcher:registerScene(SceneNameEnum.LEVEL_SELECT_SCENE, LevelSelectScene.instance())
+    sceneDispatcher:registerScene(SceneNameEnum.GAME_SCENE, GameScene.instance())
+
     -- initialized end
 
     GlobalGameManager.initialized = true
 end
 
-
--- show load ui
-function GlobalGameManager.showLoadUI(duration)
-    logger:info("show load ui, duration: " .. duration)
-end
-
+---run game
 function GlobalGameManager.run()
     -- boot
     logger:info("global game manager run")
@@ -38,7 +40,8 @@ function GlobalGameManager.run()
 
     init()
     -- game starts showing the level select screen by default.
-    GlobalDispatcher.dispatcher(nil, LevelSelectScene.instance())
+    local sceneDispatcher = SceneDispatcher.instance()
+    sceneDispatcher:dispatch(SceneNameEnum.LEVEL_SELECT_SCENE, false)
 end
 
 ---exit game

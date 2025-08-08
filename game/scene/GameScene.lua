@@ -21,12 +21,12 @@ function GameScene.instance()
     return instance
 end
 -- override
-function GameScene:enter()
+function GameScene:onLoad()
     -- Game UI
 
 end
 
-function GameScene:exit()
+function GameScene:onExit()
     -- hide game UI
 end
 

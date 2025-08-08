@@ -2,7 +2,7 @@
 local DispatchableScene = {}
 DispatchableScene.__index = DispatchableScene
 
-function DispatchableScene:enter() end
-function DispatchableScene:exit() end
+function DispatchableScene:onLoad() end
+function DispatchableScene:onExit() end
 
 return DispatchableScene
