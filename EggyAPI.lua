@@ -2981,6 +2981,30 @@ function LifeEntity.set_model_by_creature_key(_creature_key, _include_custom_mod
 ---@param _punch_threshold Fixed 击倒阈值
 function LifeEntity.set_punch_threshold(_punch_threshold) end
 
+---设置搜敌集火目标
+---@param _target LifeEntity 目标
+function LifeEntity.set_search_enemy_focus_target(_target) end
+
+---设置搜敌优先级值by标签
+---@param _tag string 标签
+---@param _priority integer 优先级
+function LifeEntity.set_search_enemy_priority_value_by_tag(_tag, _priority) end
+
+---设置搜敌优先级值by单位实体
+---@param _unit LifeEntity 单位实体
+---@param _priority integer 优先级
+function LifeEntity.set_search_enemy_priority_value_by_unit(_unit, _priority) end
+
+---设置搜敌优先级值by预设编号
+---@param _unit_key CreatureKey 预设编号
+---@param _priority integer 优先级
+function LifeEntity.set_search_enemy_priority_value_by_unit_key(_unit_key, _priority) end
+
+---设置搜敌优先级值by单位类型
+---@param _unit_prefab_type Enums.UnitType 单位类型
+---@param _priority integer 优先级
+function LifeEntity.set_search_enemy_priority_value_by_unit_type(_unit_prefab_type, _priority) end
+
 ---激活AI
 function LifeEntity.start_ai() end
 
@@ -3627,6 +3651,11 @@ function Role.set_battle_shop_visible(_battle_shop_id, _visible) end
 ---@param _strength Fixed 强度
 ---@param _color Color 颜色
 function Role.set_blind_corner(_enable, _strength, _color) end
+
+---设置按钮控件的状态
+---@param _button EButton UI按钮
+---@param _enabled boolean 状态
+function Role.set_button_enabled(_button, _enabled) end
 
 ---设置UI按钮节点文字字号
 ---@param _key EButton UI按钮节点

@@ -66,10 +66,11 @@ end
 ---@param sceneInstance DispatchableScene
 ---@return integer sceneId
 function SceneDispatcher:registerScene(sceneName, sceneInstance)
+    logger:info("register scene: " .. sceneName)
     if self.scenes[sceneName] ~= nil then
         logger:warn("scene name are duplicated: " .. sceneName .. ", covered.")
     end
-    table.insert(self, sceneInstance)
+    self.scenes[sceneName] = sceneInstance
     self.sceneCount = self.sceneCount + 1
     return self.sceneCount
 end

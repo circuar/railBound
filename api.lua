@@ -36,10 +36,6 @@ function api.setTimeout(callback, delay, useFrameCount)
     end
 end
 
-
-
-
-
 -- base package provides the package of the original api.
 local base = {}
 
@@ -127,7 +123,7 @@ end
 ---set player camera bind mode
 ---@param player Role
 ---@param bindMode Enums.CameraBindMode
-function  base.setCameraBindMode(player, bindMode)
+function base.setCameraBindMode(player, bindMode)
     player.set_camera_bind_mode(bindMode)
 end
 
@@ -151,6 +147,17 @@ function base.setUIProgressBarProperties(player, uiNode, min, max)
     if max then
         player.set_progressbar_max(uiNode, max)
     end
+end
+
+---set player projection camera fov
+---
+---(temporary use)
+---@param player Role
+---@param value number
+---@deprecated
+function base.setProjectionCameraFov(player, value)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    player.set_camera_property(21, value)
 end
 
 api.base = base

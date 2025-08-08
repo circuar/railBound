@@ -17,6 +17,30 @@ setmetatable(LevelSelectScene, DispatchableScene)
 
 local instance = nil
 
+---private constructor
+local function constructor()
+    local levelData = require "resource.levelData"
+
+    local self = setmetatable({
+        currentPage = 1,
+        maxPage = levelData.levelCount,
+    }, LevelSelectScene)
+    self:registerLevelSelectListener()
+
+    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_UP, self.pageUp)
+    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_DOWN, self.pageDown)
+
+    return self
+end
+
+
+function LevelSelectScene.instance()
+    if instance == nil then
+        instance = constructor()
+    end
+    return instance
+end
+
 function LevelSelectScene:pageUp()
     if self.currentPage >= self.maxPage then
         return
@@ -59,29 +83,6 @@ function LevelSelectScene:registerLevelSelectListener()
         local gameLoader = GameLoader.instance()
         gameLoader:initGame(selectLevelId)
     end)
-end
-
----private constructor
-local function constructor()
-    local levelData = require "resource.levelData"
-
-    local self = setmetatable({
-        currentPage = 1,
-        maxPage = levelData.levelCount,
-    }, LevelSelectScene)
-    self:registerLevelSelectListener()
-
-    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_UP,self.pageUp)
-    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_DOWN, self.pageDown)
-
-    return self
-end
-
-function LevelSelectScene.instance()
-    if instance == nil then
-        instance = constructor()
-    end
-    return instance
 end
 
 -- override
