@@ -23,7 +23,7 @@ end
 -- override
 function GameScene:onLoad()
     -- Game UI
-
+    GameUI.showGameSceneUI()
 end
 
 function GameScene:onExit()

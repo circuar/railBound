@@ -36,6 +36,10 @@ function api.setTimeout(callback, delay, useFrameCount)
     end
 end
 
+
+
+
+
 -- base package provides the package of the original api.
 local base = {}
 
@@ -125,6 +129,28 @@ end
 ---@param bindMode Enums.CameraBindMode
 function  base.setCameraBindMode(player, bindMode)
     player.set_camera_bind_mode(bindMode)
+end
+
+---@param player Role
+---@param uiNode string
+---@param current integer
+---@param duration number
+function base.setUIProgressBarCurrent(player, uiNode, current, duration)
+    player.set_progressbar_transition(uiNode, current, duration)
+end
+
+--- set UI progress bar min and max value
+---@param player Role
+---@param uiNode string
+---@param min integer?
+---@param max integer?
+function base.setUIProgressBarProperties(player, uiNode, min, max)
+    if min then
+        player.set_progressbar_min(uiNode, min)
+    end
+    if max then
+        player.set_progressbar_max(uiNode, max)
+    end
 end
 
 api.base = base

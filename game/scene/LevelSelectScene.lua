@@ -17,10 +17,14 @@ setmetatable(LevelSelectScene, DispatchableScene)
 
 local instance = nil
 
-local function pageUp()
-    if LevelSelectScene.currentPage >= LevelSelectScene.maxPage then
+function LevelSelectScene:pageUp()
+    if self.currentPage >= self.maxPage then
         return
     end
+
+    self.currentPage = self.currentPage + 1
+
+    GameUI.setLevelSelectProgress(self.currentPage)
 
     local cameraManager = CameraManager.instance()
     cameraManager:cameraMove(
@@ -30,10 +34,14 @@ local function pageUp()
     )
 end
 
-local function pageDown()
+function LevelSelectScene:pageDown()
     if LevelSelectScene.currentPage <= 0 then
         return
     end
+
+    self.currentPage = self.currentPage - 1
+
+    GameUI.setLevelSelectProgress(self.currentPage)
 
     local cameraManager = CameraManager.instance()
     cameraManager:cameraMove(
@@ -45,7 +53,6 @@ end
 
 ---register level select event listener
 ---when player click level button, this function will be called.
----this function will switch scene to "GameScene".
 function LevelSelectScene:registerLevelSelectListener()
     api.base.registerEventListener(Event.GLOBAL_LEVEL_SELECT, function(data)
         local selectLevelId = data.levelId
@@ -56,9 +63,6 @@ end
 
 ---private constructor
 local function constructor()
-    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_UP, pageUp)
-    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_DOWN, pageDown)
-
     local levelData = require "resource.levelData"
 
     local self = setmetatable({
@@ -66,6 +70,9 @@ local function constructor()
         maxPage = levelData.levelCount,
     }, LevelSelectScene)
     self:registerLevelSelectListener()
+
+    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_UP,self.pageUp)
+    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_DOWN, self.pageDown)
 
     return self
 end

@@ -1,4 +1,5 @@
 local OperationStack = require "game.core.OperationStack"
+local GameUI         = require "component.GameUI"
 ---@class LevelManager
 ---@field levelInstance Level
 local LevelManager = {}

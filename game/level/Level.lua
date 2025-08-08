@@ -1,17 +1,23 @@
+-- Level.lua
+
+-- This class should be used as a carrier for the data loaded by LevelLoader and
+-- managed by LevelManager.
+
 ---@class Level
 ---@field initialGrid table<integer, table<integer, table>>
 local Level = {}
 Level.__index = Level
 
-function Level.new(grid)
-    local self = setmetatable({
-        initialGrid = grid,
-    }, Level)
-    return self
-end
+function Level.new(levelData)
+    local self = {}
+    self.levelIndex = levelData.levelIndex
+    self.nextLevelIndex = levelData.postMainLevelIndex
+    self.grid = {}
 
-function Level:setInitialGrid(grid)
-    self.initialGrid = grid
+    
+
+    setmetatable(self, Level)
+    return self
 end
 
 function Level:getInitialGrid()
@@ -22,13 +28,16 @@ function Level:renderGridLine()
     
 end
 
-function Level:renderGrid()
+function Level:renderGridUnit()
 
+end
+
+function Level:renderFilter()
+    
 end
 
 function Level:destroy()
     
 end
-
 
 return Level

@@ -1,0 +1,9 @@
+local UI = {
+    LEVEL_SELECT_PROGRESS_BAR = "",
+    GAME_RAIL_COUNT = "",
+    GAME_RAIL_OPERATION_PUT = "",
+    GAME_RAIL_OPERATION_COLLECT = "",
+    GAME_LEVEL_NAME_LABEL = "",
+}
+
+return UI
