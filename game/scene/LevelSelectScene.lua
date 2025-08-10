@@ -5,7 +5,8 @@ local Global            = require "common.Global"
 local GameUI            = require "component.GameUI"
 local DispatchableScene = require "game.interface.DispatchableScene"
 local GameLoader        = require "game.core.GameLoader"
-local SceneDispatcher   = require "game.core.SceneDispatcher"
+local Logger            = require "logger.Logger"
+local Vector            = require "util.Vector"
 
 
 ---@class LevelSelectScene:DispatchableScene
@@ -15,20 +16,26 @@ local LevelSelectScene = {}
 LevelSelectScene.__index = LevelSelectScene
 setmetatable(LevelSelectScene, DispatchableScene)
 
+local logger = Logger.new("LevelSelectScene")
+
+
 local instance = nil
 
 ---private constructor
 local function constructor()
-    local levelData = require "resource.levelData"
-
     local self = setmetatable({
         currentPage = 1,
-        maxPage = levelData.levelCount,
+        maxPage = Global.LEVEL_PAGE_COUNT,
     }, LevelSelectScene)
+
     self:registerLevelSelectListener()
 
-    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_UP, self.pageUp)
-    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_DOWN, self.pageDown)
+    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_UP, function()
+        self:pageUp()
+    end)
+    api.base.registerEventListener(Event.EVENT_LEVEL_SELECT_PAGE_DOWN, function()
+        self:pageDown()
+    end)
 
     return self
 end
@@ -42,6 +49,7 @@ function LevelSelectScene.instance()
 end
 
 function LevelSelectScene:pageUp()
+    logger:debug("page up, self.currentPage = " .. self.currentPage)
     if self.currentPage >= self.maxPage then
         return
     end
@@ -59,7 +67,8 @@ function LevelSelectScene:pageUp()
 end
 
 function LevelSelectScene:pageDown()
-    if LevelSelectScene.currentPage <= 0 then
+    logger:debug("page down, self.currentPage = " .. self.currentPage)
+    if self.currentPage <= 1 then
         return
     end
 
@@ -79,11 +88,19 @@ end
 ---when player click level button, this function will be called.
 function LevelSelectScene:registerLevelSelectListener()
     api.base.registerEventListener(Event.GLOBAL_LEVEL_SELECT, function(data)
-        local selectLevelId = data.levelId
+        ---@type Vector3
+        local clickPosition = data.position
+        clickPosition.z = 0
         -- get gameLoader instance
         -- this is gameScene entry.
-        local gameLoader = GameLoader.instance()
-        gameLoader:initGame(selectLevelId)
+
+        local levelButtonPositionData = require "resource.levelButtonPositionData"
+        for index, value in ipairs(levelButtonPositionData) do
+            if Vector.distanceBetween(clickPosition, math.Vector3(value.buttonXYPosition[1], value.buttonXYPosition[2], 0)) <= 5 then
+                local gameLoader = GameLoader.instance()
+                gameLoader:initGame(value.levelId)
+            end
+        end
     end)
 end
 

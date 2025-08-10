@@ -170,7 +170,5 @@ function base.addSurroundMotor(entity, center, angleVelocity, duration, followRo
     entity.add_surround_motor(center, angleVelocity, duration, followRotate)
 end
 
-
-
 api.base = base
 return api

@@ -2,8 +2,8 @@ local DispatchableScene = require "game.interface.DispatchableScene"
 local GameUI            = require "component.GameUI"
 
 ---@class GameScene:DispatchableScene
-local GameScene = {}
-GameScene.__index = GameScene
+local GameScene         = {}
+GameScene.__index       = GameScene
 setmetatable(GameScene, DispatchableScene)
 
 local instance = nil
@@ -19,6 +19,7 @@ function GameScene.instance()
     end
     return instance
 end
+
 -- override
 function GameScene:onLoad()
     -- Game UI

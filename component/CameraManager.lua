@@ -63,11 +63,11 @@ function CameraManager:levelSelectMode(currentPage)
 end
 
 function CameraManager:cameraMove(towards, duration)
-    api.base.addLinearMotor(CameraManager.cameraBindEntity, towards, duration, false)
+    api.base.addLinearMotor(self.cameraBindEntity, towards, duration, false)
 end
 
 function CameraManager:getCameraBindEntity()
-    return CameraManager.cameraBindEntity
+    return self.cameraBindEntity
 end
 
 function CameraManager:setCameraPosition(position)

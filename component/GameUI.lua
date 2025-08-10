@@ -3,7 +3,6 @@ local Event                  = require "common.Event"
 local Global                 = require "common.Global"
 local Logger                 = require "logger.Logger"
 local GameUIRunBtnStatusEnum = require "common.enum.GameUIRunBtnStatusEnum"
-local UI                     = require "common.UIResource"
 local UIResource             = require "common.UIResource"
 
 local GameUI                 = {}
@@ -39,18 +38,20 @@ function GameUI.setLevelSelectProgress(progress)
         logger:error("invalid level page progress.")
     end
 
-    local BEFORE_BLANK_PERCENTAGE = 0.05
-    local AFTER_BLANK_PERCENTAGE = 0.05
+    local BEFORE_BLANK_PERCENTAGE = 0.02
+    local AFTER_BLANK_PERCENTAGE = 0.03
 
 
-    local levelProgressPercentage = progress /
-        (Global.LEVEL_PAGE_COUNT * (1 - BEFORE_BLANK_PERCENTAGE -
-            AFTER_BLANK_PERCENTAGE)) + BEFORE_BLANK_PERCENTAGE
+    local levelProgressPercentage = progress * 100 / Global.LEVEL_PAGE_COUNT *
+        (1 - BEFORE_BLANK_PERCENTAGE - AFTER_BLANK_PERCENTAGE) + BEFORE_BLANK_PERCENTAGE * 100
     -- set progress
     local player = api.getSinglePlayer()
-    api.base.setUIProgressBarProperties(player, UIResource.LEVEL_SELECT_PROGRESS_BAR,
-        BEFORE_BLANK_PERCENTAGE, 100)
-    api.base.setUIProgressBarCurrent(player, UIResource.LEVEL_SELECT_PROGRESS_BAR, levelProgressPercentage,
+    -- api.base.setUIProgressBarProperties(player, UIResource.LEVEL_SELECT_PROGRESS_BAR,
+    --     BEFORE_BLANK_PERCENTAGE, 100)
+    logger:info("set level select top progress bar: " .. levelProgressPercentage)
+    api.base.setUIProgressBarCurrent(player, UIResource.LEVEL_SELECT_PROGRESS_BAR,
+        ---@diagnostic disable-next-line: param-type-mismatch
+        math.tointeger(levelProgressPercentage),
         Global.LEVEL_SELECTOR_PAGE_SWITCH_DURATION)
 end
 
@@ -90,9 +91,9 @@ end
 function GameUI.showLevelSwitchOutAnim()
     api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_OUT_ANIM)
 end
+
 function GameUI.showLevelSwitchInAnim()
     api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_IN_ANIM)
 end
-
 
 return GameUI
