@@ -80,6 +80,8 @@ end
 function LevelSelectScene:registerLevelSelectListener()
     api.base.registerEventListener(Event.GLOBAL_LEVEL_SELECT, function(data)
         local selectLevelId = data.levelId
+        -- get gameLoader instance
+        -- this is gameScene entry.
         local gameLoader = GameLoader.instance()
         gameLoader:initGame(selectLevelId)
     end)

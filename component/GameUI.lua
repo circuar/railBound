@@ -1,15 +1,15 @@
-local api = require "api"
-local Event = require "common.Event"
-local Global = require "common.Global"
-local Logger = require "logger.Logger"
+local api                    = require "api"
+local Event                  = require "common.Event"
+local Global                 = require "common.Global"
+local Logger                 = require "logger.Logger"
 local GameUIRunBtnStatusEnum = require "common.enum.GameUIRunBtnStatusEnum"
 local UI                     = require "common.UIResource"
 local UIResource             = require "common.UIResource"
 
-local GameUI = {}
-GameUI.__index = GameUI
+local GameUI                 = {}
+GameUI.__index               = GameUI
 
-local logger = Logger.new("GameUI")
+local logger                 = Logger.new("GameUI")
 
 ---show load UI
 ---
@@ -49,8 +49,9 @@ function GameUI.setLevelSelectProgress(progress)
     -- set progress
     local player = api.getSinglePlayer()
     api.base.setUIProgressBarProperties(player, UIResource.LEVEL_SELECT_PROGRESS_BAR,
-    BEFORE_BLANK_PERCENTAGE, 100)
-    api.base.setUIProgressBarCurrent(player, UIResource.LEVEL_SELECT_PROGRESS_BAR, levelProgressPercentage, Global.LEVEL_SELECTOR_PAGE_SWITCH_DURATION)
+        BEFORE_BLANK_PERCENTAGE, 100)
+    api.base.setUIProgressBarCurrent(player, UIResource.LEVEL_SELECT_PROGRESS_BAR, levelProgressPercentage,
+        Global.LEVEL_SELECTOR_PAGE_SWITCH_DURATION)
 end
 
 function GameUI.showGameSceneUI()
@@ -62,7 +63,7 @@ function GameUI.hideGameSceneUI()
 end
 
 function GameUI.setGameUILevelName(levelName)
-    
+
 end
 
 function GameUI.setGameUIRailCount(num)
@@ -71,7 +72,27 @@ end
 
 function GameUI.setGameUIRunBtnStatus(status)
     if status == GameUIRunBtnStatusEnum.NORMAL then
-        
+
     end
 end
+
+---play level switch animation
+---@deprecated
+function GameUI.showLevelSwitchAnim()
+    local player = api.getSinglePlayer()
+    api.base.sendUIEvent(player, Event.UI_PLAY_LEVEL_SWITCH_OUT_ANIM)
+
+    api.setTimeout(function()
+        api.base.sendUIEvent(player, Event.UI_PLAY_LEVEL_SWITCH_IN_ANIM)
+    end, Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
+end
+
+function GameUI.showLevelSwitchOutAnim()
+    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_OUT_ANIM)
+end
+function GameUI.showLevelSwitchInAnim()
+    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_IN_ANIM)
+end
+
+
 return GameUI

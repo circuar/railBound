@@ -1,15 +1,17 @@
-local General = {}
-General.__index = General
+local Common = {}
+Common.__index = Common
 
 ---Safe ternary operator.
 ---@param condition boolean|nil
 ---@param valueIfTrue any
 ---@param valueIfFalse any
 ---@return any
-function General.ternary(condition, valueIfTrue, valueIfFalse)
+function Common.ternary(condition, valueIfTrue, valueIfFalse)
     if condition then
-        return valueIfFalse
+        return valueIfTrue
     else
         return valueIfFalse
     end
 end
+
+return Common

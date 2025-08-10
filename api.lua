@@ -160,5 +160,17 @@ function base.setProjectionCameraFov(player, value)
     player.set_camera_property(21, value)
 end
 
+---add surround motor
+---@param entity Unit
+---@param center Unit
+---@param angleVelocity Vector3
+---@param duration number
+---@param followRotate boolean?
+function base.addSurroundMotor(entity, center, angleVelocity, duration, followRotate)
+    entity.add_surround_motor(center, angleVelocity, duration, followRotate)
+end
+
+
+
 api.base = base
 return api

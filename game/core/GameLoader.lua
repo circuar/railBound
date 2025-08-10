@@ -15,14 +15,7 @@ local logger                 = Logger.new("GameLoader")
 local instance               = nil
 
 local function constructor()
-    local levelLoader = LevelLoader.new()
-    levelLoader:load("resource.levelData")
-    local self = setmetatable({
-        levelManager           = LevelManager.instance(),
-        playerOperationHandler = PlayerOperationHandler.instance(),
-        levelFactory           = LevelFactory.new(levelLoader),
-    }, GameLoader)
-    self.playerOperationHandler:proxy(self.levelManager)
+    local self = setmetatable({}, GameLoader)
     return self
 end
 
@@ -34,24 +27,39 @@ function GameLoader.instance()
 end
 
 --- load game environment
+--- if first load gameScene, use this method to init game environment.
 function GameLoader:initGame(levelId)
-    SceneDispatcher:instance():dispatch(SceneNameEnum.GAME_SCENE)
-    GameLoader.loadGame(levelId)
-end
+    -- load game scene
+    -- SceneDispatcher:instance():dispatch(SceneNameEnum.GAME_SCENE, true)
 
-function GameLoader:loadGame(levelId)
+    CameraManager:gameMode()
+
     local levelLoader = LevelLoader.new()
     levelLoader:load("resource.levelData")
-
     local levelFactory = LevelFactory.new(levelLoader)
-    local levelInstance = levelFactory:getInstance(levelId)
+    
+    local levelManager = LevelManager.instance()
+    levelManager:setLevelFactory(levelFactory)
+    local playerOperationHandler = PlayerOperationHandler.instance()
+    playerOperationHandler:proxy(levelManager)
 
-    GameLoader.levelManager:loadLevel(levelInstance)
-
-    local cameraManager = CameraManager.instance()
-    cameraManager:setCameraPosition()
-    cameraManager:cameraMove()
+    levelManager:loadLevel(levelId)
+    levelManager:playCutScenesOut()
 end
+
+-- function GameLoader:loadGame(levelId)
+--     local levelLoader = LevelLoader.new()
+--     levelLoader:load("resource.levelData")
+
+--     local levelFactory = LevelFactory.new(levelLoader)
+--     local levelInstance = levelFactory:getInstance(levelId)
+
+--     GameLoader.levelManager:loadLevel(levelInstance)
+
+--     local cameraManager = CameraManager.instance()
+--     cameraManager:setCameraPosition()
+--     cameraManager:cameraMove()
+-- end
 
 function GameLoader:exitGame()
     self.levelManager:unLoad()
