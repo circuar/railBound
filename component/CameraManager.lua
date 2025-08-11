@@ -41,7 +41,15 @@ function CameraManager.instance()
     return instance
 end
 
+---set the camera parameters for the game state
 function CameraManager:gameMode()
+    local player = api.getSinglePlayer()
+
+    -- set camera param
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.DIST, 50.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.FOV, 30.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_YAW, 30.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_PITCH, 45.0)
 end
 
 function CameraManager:levelSelectMode(currentPage)
