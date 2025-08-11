@@ -170,5 +170,35 @@ function base.addSurroundMotor(entity, center, angleVelocity, duration, followRo
     entity.add_surround_motor(center, angleVelocity, duration, followRotate)
 end
 
+---show tips
+---@param message string
+---@param duration number
+function base.showTips(message, duration)
+    GlobalAPI.show_tips(message, duration)
+end
+
+---create entity
+---@param entityId integer
+---@param position Vector3
+---@param rotation Quaternion
+---@param scale Vector3
+---@param player Role?
+---@return Obstacle
+function base.createEntity(entityId, position, rotation, scale, player)
+    return GameAPI.create_obstacle(entityId, position, rotation, scale, player)
+end
+
+---generate a random integer
+---@return integer
+function base.rand()
+    return LuaAPI.rand()
+end
+
+---destroy entity
+---@param entity Unit
+function base.destroyEntity(entity)
+    GameAPI.destroy_unit(entity)
+end
+
 api.base = base
 return api

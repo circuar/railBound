@@ -7,6 +7,8 @@ local DispatchableScene = require "game.interface.DispatchableScene"
 local GameLoader        = require "game.core.GameLoader"
 local Logger            = require "logger.Logger"
 local Vector            = require "util.Vector"
+local LevelMetaDataManager = require "game.level.LevelMetaDataManager"
+local ArchiveManager       = require "game.core.ArchiveManager"
 
 
 ---@class LevelSelectScene:DispatchableScene
@@ -94,11 +96,18 @@ function LevelSelectScene:registerLevelSelectListener()
         -- get gameLoader instance
         -- this is gameScene entry.
 
-        local levelButtonPositionData = require "resource.levelButtonPositionData"
-        for index, value in ipairs(levelButtonPositionData) do
-            if Vector.distanceBetween(clickPosition, math.Vector3(value.buttonXYPosition[1], value.buttonXYPosition[2], 0)) <= 5 then
+        local levelMetaDataManager = LevelMetaDataManager.instance()
+        local levelMetaDataList = levelMetaDataManager:getLevelMetaDataList()
+
+        for index, levelMetaData in ipairs(levelMetaDataList) do
+            if Vector.distanceBetween(clickPosition, math.Vector3(levelMetaData.buttonXYPosition[1], levelMetaData.buttonXYPosition[2], 0)) <= 5 then
+                if levelMetaDataManager:checkLevelUnlock(levelMetaData.levelIndex, ArchiveManager.instance():getMainLineProgress()) == false then
+                    api.base.showTips("请先通过之前的关卡", 3.0)
+                    return
+                end
+
                 local gameLoader = GameLoader.instance()
-                gameLoader:initGame(value.levelId)
+                gameLoader:initGame(levelMetaData.levelIndex)
             end
         end
     end)

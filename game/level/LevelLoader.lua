@@ -16,11 +16,11 @@ function LevelLoader:load(path)
     self.data = require(path)
 end
 
-function LevelLoader:getLevelData(levelIndex)
+function LevelLoader:getLevelInfo(levelIndex)
     return self.data[levelIndex]
 end
 
-function LevelLoader:getLevelDataByLevelLabel(levelLabel)
+function LevelLoader:getLevelInfoByLevelLabel(levelLabel)
     for index, value in ipairs(self.data) do
         if value.levelLabel == levelLabel then
             return value
