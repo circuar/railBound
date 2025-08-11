@@ -1,5 +1,7 @@
 local GridUnit = require "game.interface.GridUnit"
 local Logger = require "logger.Logger"
+local Global = require "common.Global"
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 
 ---@class FixedStraightRail:GridUnit
 ---@field private direction integer
@@ -32,28 +34,42 @@ function FixedStraightRail.new(directionMask)
     return self
 end
 
-function FixedStraightRail:forward(enterChannelMask)
+function FixedStraightRail:checkEnterEnable()
+    
+end
+
+
+---comment
+---@param enterChannel PositionDirectionEnum
+---@return PositionDirectionEnum
+function FixedStraightRail:forward(enterChannel)
     if self.direction == 1 then
-        if enterChannelMask[2] == 1 then
-            return { 0, 0, 0, 1 }
-        elseif enterChannelMask[4] == 1 then
-            return { 0, 1, 0, 0 }
+        if enterChannel == PositionDirectionEnum.LEFT then
+            return PositionDirectionEnum.RIGHT
         else
-            return { 0, 0, 0, 0 }
+            return PositionDirectionEnum.LEFT
         end
     else
-        if enterChannelMask[1] == 1 then
-            return { 0, 0, 1, 0 }
-        elseif enterChannelMask[3] then
-            return { 1, 0, 0, 0 }
+        if enterChannel == PositionDirectionEnum.TOP then
+            return PositionDirectionEnum.BOTTOM
         else
-            return { 0, 0, 0, 0 }
+            return PositionDirectionEnum.TOP
         end
     end
 end
 
+---train enter
+---@param trainInstance Train
 function FixedStraightRail:onEnter(trainInstance)
-
+    local gridDuration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_TRAIN_FRAME_COUNT
+    local gridSpeed = Global.GAME_GRID_SIZE / gridDuration
+    if self.direction == 0 then
+        trainInstance:addVelocity(math.Vector3(0, 0, gridSpeed), gridDuration)
+    else
+        trainInstance:addVelocity(math.Vector3(gridSpeed, 0, 0), gridDuration)
+    end
 end
+
+
 
 return FixedStraightRail

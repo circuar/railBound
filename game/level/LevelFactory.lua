@@ -12,12 +12,8 @@ function LevelFactory.new(levelLoader)
 end
 
 function LevelFactory:getInstance(levelId)
-    local levelData = self.levelLoader:getLevelData(levelId)
-    
-
-
-
-    return Level.new()
+    local levelInfo = self.levelLoader:getLevelInfo(levelId)
+    return Level.new(levelInfo)
 end
 
 
