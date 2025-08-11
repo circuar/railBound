@@ -79,21 +79,20 @@ end
 
 ---play level switch animation
 ---@deprecated
-function GameUI.showLevelSwitchAnim()
-    local player = api.getSinglePlayer()
-    api.base.sendUIEvent(player, Event.UI_PLAY_LEVEL_SWITCH_OUT_ANIM)
+function GameUI.showLevelSwitchAnim(loadInterval)
+    GameUI.showLevelSwitchAnimIn()
 
     api.setTimeout(function()
-        api.base.sendUIEvent(player, Event.UI_PLAY_LEVEL_SWITCH_IN_ANIM)
-    end, Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
+        GameUI.showLevelSwitchAnimOut()
+    end, Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION + loadInterval)
 end
 
-function GameUI.showLevelSwitchOutAnim()
-    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_OUT_ANIM)
+function GameUI.showLevelSwitchAnimIn()
+    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_ANIM_IN)
 end
 
-function GameUI.showLevelSwitchInAnim()
-    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_IN_ANIM)
+function GameUI.showLevelSwitchAnimOut()
+    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_ANIM_OUT)
 end
 
 return GameUI

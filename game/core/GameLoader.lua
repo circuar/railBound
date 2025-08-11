@@ -37,13 +37,16 @@ function GameLoader:initGame(levelId)
     local levelLoader = LevelLoader.new()
     levelLoader:load("resource.levelData")
     local levelFactory = LevelFactory.new(levelLoader)
-    
+
     local levelManager = LevelManager.instance()
     levelManager:setLevelFactory(levelFactory)
     local playerOperationHandler = PlayerOperationHandler.instance()
     playerOperationHandler:proxy(levelManager)
 
     levelManager:loadLevel(levelId)
+    levelManager:render()
+
+
     levelManager:playCutScenesOut()
 end
 

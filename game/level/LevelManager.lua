@@ -42,8 +42,9 @@ function LevelManager:loadLevel(level)
     self.levelInstance = self.levelFactory:getInstance(level)
 end
 
-function LevelManager:renderLevel()
-    
+function LevelManager:render()
+    self.levelInstance:renderGridLine()
+    self.levelInstance:renderFilter()
 end
 
 

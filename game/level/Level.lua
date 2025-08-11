@@ -1,6 +1,7 @@
 local Global       = require "common.Global"
 local api          = require "api"
 local GameResource = require "common.GameResource"
+local Logger       = require "logger.Logger"
 -- Level.lua
 
 -- This class should be used as a carrier for the data loaded by LevelLoader and
@@ -11,6 +12,7 @@ local GameResource = require "common.GameResource"
 ---@field levelIndex integer
 ---@field filterParam table
 ---@field backgroundSceneIndex integer
+---@field loadSceneEntity Unit
 ---@field remainRailCount integer
 ---@field gridRowSize integer
 ---@field gridColSize integer
@@ -25,6 +27,7 @@ local GameResource = require "common.GameResource"
 local Level        = {}
 Level.__index      = Level
 
+local logger       = Logger.new("Level")
 
 local function initObjectField(levelInfo)
     local self = {
@@ -32,6 +35,7 @@ local function initObjectField(levelInfo)
         levelIndex = levelInfo.levelIndex,
         filterParam = levelInfo.filterParam,
         backgroundSceneIndex = levelInfo.backgroundSceneIndex,
+        loadSceneEntity = nil,
         remainRailCount = levelInfo.remainRailCount,
         gridRowSize = levelInfo.levelData.gridSize.row,
         gridColSize = levelInfo.levelData.gridSize.col,
@@ -67,11 +71,12 @@ function Level:renderGridLine()
         table.insert(
             self.gridLineEntityList, api.base.createEntity(
                 GameResource.GAME_GRID_EDGE_LINE_PRESET_ID,
-                math.Vector3(0, -19.90, yPos),
+                math.Vector3(0, -20, yPos),
                 math.Quaternion(0, 0, 0),
-                math.Vector3(xLength, 0.2, 20)
+                math.Vector3(xLength, 20.2, 0.2)
             )
         )
+        logger:debug("create grid line at: " .. tostring(math.Vector3(0, -20, yPos)))
     end
 
     -- render y direction line
@@ -82,9 +87,9 @@ function Level:renderGridLine()
         table.insert(
             self.gridLineEntityList, api.base.createEntity(
                 GameResource.GAME_GRID_EDGE_LINE_PRESET_ID,
-                math.Vector3(xPos, -19.90, 0),
+                math.Vector3(xPos, -20, 0),
                 math.Quaternion(0, 0, 0),
-                math.Vector3(yLength, 0.2, 20)
+                math.Vector3(0.2, 20.2, yLength)
             )
         )
     end
@@ -99,6 +104,27 @@ end
 
 function Level:renderGridUnit()
 
+end
+
+function Level:clearGridUnitEntity()
+
+end
+
+function Level:renderSceneBackground()
+    local entityId = GameResource.GAME_SCENE_BACKGROUND_ENTITY_ID_LIST[self.backgroundSceneIndex]
+    local sceneEntity = api.base.getEntityById(entityId)
+    self.loadSceneEntity = sceneEntity
+    api.base.setEntityPosition(sceneEntity, math.Vector3(0, 0, 0))
+    logger:info("set scene background, index: " .. self.backgroundSceneIndex)
+end
+
+function Level:clearSceneBackground()
+    if self.loadSceneEntity == nil then
+        logger:info("Scene background without loading.")
+        return
+    end
+    api.base.setEntityPosition(self.loadSceneEntity, math.Vector3(0, 0, 500))
+    self.loadSceneEntity = nil
 end
 
 function Level:renderFilter()

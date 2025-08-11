@@ -34,12 +34,16 @@ function FixedStraightRail.new(directionMask)
     return self
 end
 
-function FixedStraightRail:checkEnterEnable()
-    
+---Check if the direction is accessible
+---@param enterDirection PositionDirectionEnum
+function FixedStraightRail:checkEnterPermit(enterDirection)
+    if self.direction == 0 then
+        return enterDirection == PositionDirectionEnum.TOP or enterDirection == PositionDirectionEnum.BOTTOM
+    else
+        return enterDirection == PositionDirectionEnum.LEFT or enterDirection == PositionDirectionEnum.RIGHT
+    end
 end
 
-
----comment
 ---@param enterChannel PositionDirectionEnum
 ---@return PositionDirectionEnum
 function FixedStraightRail:forward(enterChannel)
@@ -69,7 +73,5 @@ function FixedStraightRail:onEnter(trainInstance)
         trainInstance:addVelocity(math.Vector3(gridSpeed, 0, 0), gridDuration)
     end
 end
-
-
 
 return FixedStraightRail
