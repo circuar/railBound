@@ -7,6 +7,7 @@ local api            = require "api"
 ---@class LevelManager
 ---@field levelFactory LevelFactory
 ---@field levelInstance Level
+---@field currentLevelGridSize integer[]
 local LevelManager   = {}
 LevelManager.__index = LevelManager
 
@@ -24,6 +25,13 @@ local function constructor()
     return self
 end
 
+local function renderCursor(row, col, status)
+    
+end
+
+
+
+
 function LevelManager.instance()
     if instance == nil then
         instance = constructor()
@@ -39,18 +47,22 @@ function LevelManager:loadLevel(level)
     if self.levelFactory == nil then
         logger:error("level factory not set")
     end
-    self.levelInstance = self.levelFactory:getInstance(level)
+    local levelInstance = self.levelFactory:getInstance(level)
+
+    -- Set the levelManager for the level instance, used for game state
+    -- communication.
+    levelInstance:setLevelManager(self)
+
+    self.levelInstance = levelInstance
+    self.currentLevelGridSize = levelInstance:getGridSize()
 end
 
 function LevelManager:render()
     self.levelInstance:renderGridLine()
     self.levelInstance:renderFilter()
+    self.levelInstance:renderSceneBackground()
+    self.levelInstance:renderGridUnit()
 end
-
-
-
-
-
 
 function LevelManager:playCutScenesIn()
     local cameraManager = CameraManager.instance()
@@ -76,10 +88,26 @@ function LevelManager:playCutScenesOut()
     GameUI.showLevelSwitchInAnim()
 end
 
-
-
+-- callback method =============================================================
 function LevelManager:unLoad()
     self.levelInstance = nil
+    self.currentLevelGridSize = nil
+end
+
+function LevelManager:levelSuccess(successGroupIndex)
+
+end
+
+function LevelManager:levelFailed(failedTrainId)
+
+end
+
+function LevelManager:click(position)
+
+end
+
+function LevelManager:slide(angle)
+    
 end
 
 return LevelManager

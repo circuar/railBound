@@ -34,6 +34,14 @@ function FixedStraightRail.new(directionMask)
     return self
 end
 
+function FixedStraightRail:createAssociatedEntity()
+
+end
+
+function FixedStraightRail:destroyAssociatedEntity()
+    
+end
+
 ---Check if the direction is accessible
 ---@param enterDirection PositionDirectionEnum
 function FixedStraightRail:checkEnterPermit(enterDirection)
@@ -44,17 +52,17 @@ function FixedStraightRail:checkEnterPermit(enterDirection)
     end
 end
 
----@param enterChannel PositionDirectionEnum
+---@param enterDirection PositionDirectionEnum
 ---@return PositionDirectionEnum
-function FixedStraightRail:forward(enterChannel)
+function FixedStraightRail:forward(enterDirection)
     if self.direction == 1 then
-        if enterChannel == PositionDirectionEnum.LEFT then
+        if enterDirection == PositionDirectionEnum.LEFT then
             return PositionDirectionEnum.RIGHT
         else
             return PositionDirectionEnum.LEFT
         end
     else
-        if enterChannel == PositionDirectionEnum.TOP then
+        if enterDirection == PositionDirectionEnum.TOP then
             return PositionDirectionEnum.BOTTOM
         else
             return PositionDirectionEnum.TOP

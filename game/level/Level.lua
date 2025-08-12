@@ -1,7 +1,9 @@
-local Global       = require "common.Global"
-local api          = require "api"
-local GameResource = require "common.GameResource"
-local Logger       = require "logger.Logger"
+local Global            = require "common.Global"
+local api               = require "api"
+local GameResource      = require "common.GameResource"
+local Logger            = require "logger.Logger"
+local GridUnitFactory   = require "game.level.GridUnitFactory"
+local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 -- Level.lua
 
 -- This class should be used as a carrier for the data loaded by LevelLoader and
@@ -24,10 +26,11 @@ local Logger       = require "logger.Logger"
 ---@field finalLinkedGridUnitData table
 ---@field finalLinkedGridUnits GridUnit[]
 ---@field gridLineEntityList Unit[]
-local Level        = {}
-Level.__index      = Level
+---@field levelManagerRef LevelManager
+local Level             = {}
+Level.__index           = Level
 
-local logger       = Logger.new("Level")
+local logger            = Logger.new("Level")
 
 local function initObjectField(levelInfo)
     local self = {
@@ -55,11 +58,39 @@ end
 function Level.new(levelInfo)
     local self = initObjectField(levelInfo)
     setmetatable(self, Level)
+    -- init grid unit
+    for rowIndex, row in ipairs(self.gridData) do
+        -- initialize two-dimensional array
+        self.grid[rowIndex] = {}
+        for colIndex, colElemData in ipairs(row) do
+            if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
+                self.grid[rowIndex][colIndex] = GridUnitFactory.getInstance(
+                    colElemData.gridUnitType,
+                    colElemData.directionMask,
+                    colElemData.chiralityMask
+                )
+            end
+        end
+    end
     return self
+end
+
+function Level:setLevelManager(levelManager)
+    self.levelManagerRef = levelManager
 end
 
 function Level:getGrid()
     return self.grid
+end
+
+--- This method will return the row and column size of the current level grid,
+--- with the return value formatted as a table that has two attributes: row and
+--- col, which represent the size of the rows and columns.
+---
+--- Such as: `{ row = 1, col = 5 }`
+---@return table
+function Level:getGridSize()
+    return {row = self.gridRowSize, col = self.gridColSize}
 end
 
 function Level:renderGridLine()
@@ -76,7 +107,6 @@ function Level:renderGridLine()
                 math.Vector3(xLength, 20.2, 0.2)
             )
         )
-        logger:debug("create grid line at: " .. tostring(math.Vector3(0, -20, yPos)))
     end
 
     -- render y direction line
@@ -103,11 +133,19 @@ function Level:destroyGridLine()
 end
 
 function Level:renderGridUnit()
-
+    for rowIndex = 1, self.gridRowSize, 1 do
+        for colIndex = 1, self.gridColSize, 1 do
+            self.grid[rowIndex][colIndex]:createAssociatedEntity()
+        end
+    end
 end
 
 function Level:clearGridUnitEntity()
-
+    for rowIndex = 1, self.gridRowSize, 1 do
+        for colIndex = 1, self.gridColSize, 1 do
+            self.grid[rowIndex][colIndex]:destroyAssociatedEntity()
+        end
+    end
 end
 
 function Level:renderSceneBackground()

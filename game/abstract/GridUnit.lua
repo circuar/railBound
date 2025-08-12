@@ -14,9 +14,21 @@ GridUnit.__index = GridUnit
 ---          bottom
 --- 
 --- enterChannelMask = { top, right, bottom, left }
+--- 
+--- This method is used to determine the direction in which the train instance
+--- should move to the next position in the current unit.
 ---
+--- This method does not guarantee correct output in the case of erroneous
+--- input.
+---
+--- It is necessary to check the return value of `checkEnterPermit()` before
+--- calling this method.
 ---@param enterChannelMask integer[]
 function GridUnit:forward(enterChannelMask) end
+
+function GridUnit:checkEnterPermit(enterDirection) end
+function GridUnit:createAssociatedEntity() end
+function GridUnit:destroyAssociatedEntity() end
 
 ---when a train enter this grid unit, you can call this method to proxy action
 ---of the train.

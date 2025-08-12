@@ -1,4 +1,4 @@
-local GridUnitTypeEnum = require "common.enum.GridUnitTypeEnum"
+local GridUnitTypeEnum = require "common.enum.GridUnitClassEnum"
 return {
     [1] = {
         levelIndex = 1,

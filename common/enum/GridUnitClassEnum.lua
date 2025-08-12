@@ -1,5 +1,7 @@
-local GridUnitTypeEnum = {
+---@alias GridUnitClassEnum integer
+local GridUnitClassEnum = {
     EMPTY = 0,
+    
     RAIL_STRAIGHT_MOVEABLE = 1,
     RAIL_STRAIGHT_FIXED = 2,
     RAIL_CORNER_MOVEABLE = 3,
@@ -11,4 +13,4 @@ local GridUnitTypeEnum = {
     BARRIER_STONE = 8,
 }
 
-return GridUnitTypeEnum
+return GridUnitClassEnum
