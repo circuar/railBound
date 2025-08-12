@@ -6,6 +6,7 @@ local Global           = require "common.Global"
 local api              = require "api"
 local GameResource     = require "common.GameResource"
 local CursorStatusEnum = require "common.enum.CursorStatusEnum"
+local Array            = require "util.Array"
 ---@class LevelManager
 ---@field levelFactory LevelFactory
 ---@field levelInstance Level
@@ -132,6 +133,37 @@ function LevelManager:setDeleteMode(status)
         GameUI.hideDeleteUIBorder()
     end
 end
+
+local function putUnitGridRail(grid, row, col)
+    local gridUnitRef = grid[row][col]
+    if gridUnitRef ~= nil then
+        logger:error("This grid unit slot already has a object.")
+        error()
+    end
+    
+end
+
+
+---comment
+---@param grid GridUnit[][]
+---@param row integer
+---@param col integer
+local function clickMovableGridUnitRail(grid, row, col)
+    local gridUnitRef = grid[row][col]
+    if gridUnitRef:isFixed() then
+        logger:warn("This is a fixed grid unit, skipped.")
+        return
+    end
+    local channelCount = Array.countElement(grid, 1)
+    if channelCount ~= 3 then
+        return
+    end
+    gridUnitRef:mirror()
+end
+
+local function slideMovableGridUnitRail(grid, row, col, slideDirection)
+    
+end
 -- callback method =============================================================
 function LevelManager:unLoad()
     self.levelInstance = nil
@@ -175,8 +207,10 @@ function LevelManager:click(position)
         -- delete grid unit logic
 
     else
-        if true then
-            -- already 
+        local clickGridUnitRef = self.levelInstance:getGrid()[clickRow][clickCol]
+        if clickGridUnitRef == nil then
+            --create logic
+            self:changeCursor(clickRow, clickCol, CursorStatusEnum.CREATE)
         else
         end
     end

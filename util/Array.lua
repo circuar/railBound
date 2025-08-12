@@ -7,7 +7,7 @@ Array.__index = Array
 ---@param comparator? fun(a:any, b:any):boolean
 ---@return integer
 function Array.find(arr, elem, comparator)
-    local cmp = comparator or function (a, b)
+    local cmp = comparator or function(a, b)
         return a == b
     end
 
@@ -17,6 +17,20 @@ function Array.find(arr, elem, comparator)
         end
     end
     return -1
+end
+
+---Count the number of specified elements in the array.
+---@param arr any[]
+---@param elem any
+---@return integer
+function Array.countElement(arr, elem)
+    local count = 0
+    for index, value in ipairs(arr) do
+        if value == elem then
+            count = count + 1
+        end
+    end
+    return count
 end
 
 

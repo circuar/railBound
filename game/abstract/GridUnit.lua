@@ -39,5 +39,8 @@ function GridUnit:onEnter(trainInstance) end
 
 ---reset this grid unit status
 function GridUnit:reset() end
+function GridUnit:isFixed() end
+function GridUnit:getDirectionMask() end
+function GridUnit:mirror() end
 
 return GridUnit
