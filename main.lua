@@ -13,9 +13,15 @@ Logger.setGlobalLogLevel(LogLevel.DEBUG)
 local logger = Logger.new("main")
 logger:info("start ...")
 
--- GlobalGameManager.run()
+GlobalGameManager.run()
 
----Test
+-- -Test
+api.setTimeout(function()
+    GameLoader.instance():initGame(1)
+end, 10.0)
 -- api.setTimeout(function()
---     GameLoader.instance():initGame(1)
+--     GameUI.showLoadUI(1.0)
+-- end, 5.0)
+-- api.setTimeout(function()
+--     GameUI.showLoadUI(1.0)
 -- end, 10.0)

@@ -6,6 +6,9 @@ local Logger                 = require "logger.Logger"
 local SceneNameEnum          = require "common.enum.SceneNameEnum"
 local PlayerOperationHandler = require "game.core.PlayerOperationHandler"
 local LevelManager           = require "game.level.LevelManager"
+local GameUI                 = require "component.GameUI"
+local api                    = require "api"
+local Global                 = require "common.Global"
 
 local GameLoader             = {}
 GameLoader.__index           = GameLoader
@@ -30,9 +33,7 @@ end
 --- if first load gameScene, use this method to init game environment.
 function GameLoader:initGame(levelId)
     -- load game scene
-    -- SceneDispatcher:instance():dispatch(SceneNameEnum.GAME_SCENE, true)
-
-    CameraManager:gameMode()
+    SceneDispatcher:instance():dispatch(SceneNameEnum.GAME_SCENE, false)
 
     local levelLoader = LevelLoader.new()
     levelLoader:load("resource.levelData")
@@ -43,26 +44,16 @@ function GameLoader:initGame(levelId)
     local playerOperationHandler = PlayerOperationHandler.instance()
     playerOperationHandler:proxy(levelManager)
 
-    levelManager:loadLevel(levelId)
-    levelManager:render()
+    api.setTimeout(function()
+        CameraManager:gameMode()
+        levelManager:playCutScenesIn()
+        levelManager:loadLevel(levelId)
+    end, Global.LOAD_UI_FADE_IN_OUT_TIME + 1.0 - Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
 
-
-    levelManager:playCutScenesOut()
+    api.setTimeout(function()
+        levelManager:playCutScenesOut()
+    end, Global.LOAD_UI_FADE_IN_OUT_TIME + 1.0)
 end
-
--- function GameLoader:loadGame(levelId)
---     local levelLoader = LevelLoader.new()
---     levelLoader:load("resource.levelData")
-
---     local levelFactory = LevelFactory.new(levelLoader)
---     local levelInstance = levelFactory:getInstance(levelId)
-
---     GameLoader.levelManager:loadLevel(levelInstance)
-
---     local cameraManager = CameraManager.instance()
---     cameraManager:setCameraPosition()
---     cameraManager:cameraMove()
--- end
 
 function GameLoader:exitGame()
     self.levelManager:unLoad()

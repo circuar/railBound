@@ -1,11 +1,11 @@
 local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
-local FixedStraightRail = require "game.object.grid.FixedStraightRail"
-local FixedCornerRail   = require "game.object.grid.FixedCornerRail"
+local FixedNormalRail = require "game.object.grid.FixedNormalRail"
+local FixedCornerRail   = require "game.object.grid.FixedNormalRail"
 local GridUnitFactory = {}
 GridUnitFactory.__index = GridUnitFactory
 
 local gridUnitClassMap = {
-    [GridUnitClassEnum.RAIL_STRAIGHT_FIXED] = FixedStraightRail,
+    [GridUnitClassEnum.RAIL_NORMAL_FIXED] = FixedNormalRail,
     [GridUnitClassEnum.RAIL_CORNER_FIXED] = FixedCornerRail,
 }
 
@@ -14,8 +14,9 @@ local gridUnitClassMap = {
 ---@param gridUnitClassType GridUnitClassEnum
 ---@param directionMask integer[]
 ---@param chiralityMask integer
-function GridUnitFactory.getInstance(gridUnitClassType, directionMask, chiralityMask)
-    local gridUnitInstance = gridUnitClassMap[gridUnitClassType].new(directionMask, chiralityMask)
+---@param position Vector3
+function GridUnitFactory.getInstance(gridUnitClassType, directionMask, chiralityMask, position)
+    local gridUnitInstance = gridUnitClassMap[gridUnitClassType].new(directionMask, chiralityMask, position)
     return gridUnitInstance
 end
 

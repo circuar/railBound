@@ -1,4 +1,4 @@
-local DispatchableScene = require "game.interface.DispatchableScene"
+local DispatchableScene = require "game.abstract.DispatchableScene"
 local GameUI            = require "component.GameUI"
 
 ---@class GameScene:DispatchableScene

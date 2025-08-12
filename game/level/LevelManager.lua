@@ -1,12 +1,14 @@
-local OperationStack   = require "game.core.OperationStack"
-local GameUI           = require "component.GameUI"
-local Logger           = require "logger.Logger"
-local CameraManager    = require "component.CameraManager"
-local Global           = require "common.Global"
-local api              = require "api"
-local GameResource     = require "common.GameResource"
-local CursorStatusEnum = require "common.enum.CursorStatusEnum"
-local Array            = require "util.Array"
+local OperationStack    = require "game.core.OperationStack"
+local GameUI            = require "component.GameUI"
+local Logger            = require "logger.Logger"
+local CameraManager     = require "component.CameraManager"
+local Global            = require "common.Global"
+local api               = require "api"
+local GameResource      = require "common.GameResource"
+local CursorStatusEnum  = require "common.enum.CursorStatusEnum"
+local Array             = require "util.Array"
+local GridUnitFactory   = require "game.level.GridUnitFactory"
+local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 ---@class LevelManager
 ---@field levelFactory LevelFactory
 ---@field levelInstance Level
@@ -17,130 +19,27 @@ local Array            = require "util.Array"
 ---@field clickGrid table
 ---@field operationStack OperationStack
 ---@field deleteMode boolean
-local LevelManager     = {}
-LevelManager.__index   = LevelManager
+local LevelManager      = {}
+LevelManager.__index    = LevelManager
 
-local logger           = Logger.new("LevelManager")
+local logger            = Logger.new("LevelManager")
 
-local instance         = nil
+local instance          = nil
 
-
-local function constructor()
-    local createCursorEntity = api.base.createEntity(GameResource.GAME_GRID_CREATE_CURSOR_ENTITY_ID,
-        math.Vector3(0, -50, 0), math.Quaternion(0, 0, 0), math.Vector3(1, 1, 1))
-    local deleteCursorEntity = api.base.createEntity(GameResource.GAME_GRID_DELETE_CURSOR_ENTITY_ID,
-        math.Vector3(0, -50, 0), math.Quaternion(0, 0, 0), math.Vector3(1, 1, 1))
-    local alterCursorEntity = api.base.createEntity(GameResource.GAME_GRID_ALTER_CURSOR_ENTITY_ID,
-        math.Vector3(0, -50, 0), math.Quaternion(0, 0, 0), math.Vector3(1, 1, 1))
-    local self = setmetatable({
-        levelFactory = nil,
-        levelInstance = nil,
-        cursorEntity = {
-            [CursorStatusEnum.CREATE] = createCursorEntity,
-            [CursorStatusEnum.DELETE] = deleteCursorEntity,
-            [CursorStatusEnum.ALTER] = alterCursorEntity
-        },
-        currentLevelGridSize = {},
-        effectiveClick = false,
-        clickPosition = nil,
-        clickGrid = {},
-        operationStack = OperationStack.new(),
-        deleteMode = false
-    }, LevelManager)
-    return self
-end
-
-function LevelManager:changeCursor(row, col, status)
-    local centerX = (col - 0.5 - self.currentLevelGridSize.col / 2) * Global.GAME_GRID_SIZE
-    local centerZ = (row - 0.5 - self.currentLevelGridSize.row / 2) * Global.GAME_GRID_SIZE
-    api.base.setEntityPosition(self.cursorEntity[status], math.Vector3(centerX, -20, centerZ))
-    for key, cursorEntity in pairs(self.cursorEntity) do
-        if key ~= status then
-            api.base.setEntityPosition(cursorEntity, math.Vector3(0, -50, 0))
-        end
-    end
-end
-
-function LevelManager:hideCursor()
-    for key, cursorEntity in pairs(self.cursorEntity) do
-        api.base.setEntityPosition(cursorEntity, math.Vector3(0, -50, 0))
-    end
-end
-
-function LevelManager.instance()
-    if instance == nil then
-        instance = constructor()
-    end
-    return instance
-end
-
-function LevelManager:setLevelFactory(levelFactory)
-    self.levelFactory = levelFactory
-end
-
-function LevelManager:loadLevel(level)
-    if self.levelFactory == nil then
-        logger:error("level factory not set")
-    end
-    local levelInstance = self.levelFactory:getInstance(level)
-
-    -- Set the levelManager for the level instance, used for game state
-    -- communication.
-    levelInstance:setLevelManager(self)
-
-    self.levelInstance = levelInstance
-    self.currentLevelGridSize = levelInstance:getGridSize()
-end
-
-function LevelManager:render()
-    self.levelInstance:renderGridLine()
-    self.levelInstance:renderFilter()
-    self.levelInstance:renderSceneBackground()
-    self.levelInstance:renderGridUnit()
-end
-
-function LevelManager:playCutScenesIn()
-    local cameraManager = CameraManager.instance()
-    local cameraMoveVelocity = math.Vector3(0.8660, 0, 0.5000) * 10.0
-    local cameraMoveDistance = 10.0
-    local cameraMoveDuration = cameraMoveDistance / cameraMoveVelocity:length()
-    cameraManager:cameraMove(cameraMoveVelocity, cameraMoveDuration)
-    api.setTimeout(function()
-        GameUI.showLevelSwitchOutAnim()
-    end, cameraMoveDuration - Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
-end
-
-function LevelManager:playCutScenesOut()
-    local cameraManager = CameraManager.instance()
-    local cameraMoveVelocity = math.Vector3(0.8660, 0, 0.5000) * 10.0
-    local cameraMoveDistance = 10.0
-    local cameraMoveDuration = cameraMoveDistance / cameraMoveVelocity:length()
-
-    --- initial camera position
-    cameraManager:setCameraPosition(Global.GAME_CAMERA_CENTER_REFERENCE_POINT - cameraMoveVelocity * cameraMoveDuration)
-
-    cameraManager:cameraMove(cameraMoveVelocity, cameraMoveDuration)
-    GameUI.showLevelSwitchInAnim()
-end
-
----comment
----@param status boolean
-function LevelManager:setDeleteMode(status)
-    self.deleteMode = status
-    if status then
-        GameUI.showDeleteUIBorder()
-    else
-        GameUI.hideDeleteUIBorder()
-    end
-end
-
-local function putUnitGridRail(grid, row, col)
+local function createUnitGridRail(grid, row, col, centerPosition)
     local gridUnitRef = grid[row][col]
     if gridUnitRef ~= nil then
         logger:error("This grid unit slot already has a object.")
         error()
     end
-    
+    local gridUnit = GridUnitFactory.getInstance(
+        GridUnitClassEnum.RAIL_MOVABLE,
+        { 0, 1, 0, 1 },
+        1,
+        centerPosition
+    )
+    grid[row][col] = gridUnit
+    return gridUnit
 end
 
 
@@ -162,8 +61,116 @@ local function clickMovableGridUnitRail(grid, row, col)
 end
 
 local function slideMovableGridUnitRail(grid, row, col, slideDirection)
-    
+
 end
+
+-- constructor =================================================================
+
+
+local function constructor()
+    local createCursorEntity = api.base.getEntityById(GameResource.GAME_GRID_CREATE_CURSOR_ENTITY_ID)
+    api.base.setEntityPosition(createCursorEntity, math.Vector3(0, -50, 0))
+
+    local deleteCursorEntity = api.base.getEntityById(GameResource.GAME_GRID_DELETE_CURSOR_ENTITY_ID)
+    api.base.setEntityPosition(deleteCursorEntity, math.Vector3(0, -50, 0))
+
+    local self = setmetatable({
+        levelFactory = nil,
+        levelInstance = nil,
+        cursorEntity = {
+            [CursorStatusEnum.CREATE] = createCursorEntity,
+            [CursorStatusEnum.DELETE] = deleteCursorEntity,
+        },
+        currentLevelGridSize = {},
+        effectiveClick = false,
+        clickPosition = nil,
+        clickGrid = {},
+        operationStack = OperationStack.new(),
+        deleteMode = false
+    }, LevelManager)
+    return self
+end
+
+function LevelManager.instance()
+    if instance == nil then
+        instance = constructor()
+    end
+    return instance
+end
+
+-- public method ===============================================================
+
+function LevelManager:setLevelFactory(levelFactory)
+    self.levelFactory = levelFactory
+end
+
+function LevelManager:changeCursor(row, col, status)
+    local centerX = (col - 0.5 - self.currentLevelGridSize.col / 2) * Global.GAME_GRID_SIZE
+    local centerZ = (row - 0.5 - self.currentLevelGridSize.row / 2) * Global.GAME_GRID_SIZE
+    api.base.setEntityPosition(self.cursorEntity[status], math.Vector3(centerX, -20, centerZ))
+    for key, cursorEntity in pairs(self.cursorEntity) do
+        if key ~= status then
+            api.base.setEntityPosition(cursorEntity, math.Vector3(0, -50, 0))
+        end
+    end
+end
+
+function LevelManager:hideCursor()
+    for key, cursorEntity in pairs(self.cursorEntity) do
+        api.base.setEntityPosition(cursorEntity, math.Vector3(0, -50, 0))
+    end
+end
+
+function LevelManager:loadLevel(level)
+    if self.levelFactory == nil then
+        logger:error("level factory not set")
+    end
+    local levelInstance = self.levelFactory:getInstance(level)
+
+    self.levelInstance = levelInstance
+    self.currentLevelGridSize = { row = levelInstance.gridRowSize, col = levelInstance.gridColSize }
+
+
+    levelInstance:renderFilter()
+    levelInstance:renderGridLine()
+    levelInstance:renderSceneBackground()
+end
+
+function LevelManager:playCutScenesIn()
+    local cameraManager = CameraManager.instance()
+    local cameraMoveVelocity = math.Vector3(0.8660, 0, 0.5000) * 50.0
+    local cameraMoveDistance = 50.0
+    local cameraMoveDuration = cameraMoveDistance / cameraMoveVelocity:length()
+    cameraManager:cameraMove(cameraMoveVelocity, cameraMoveDuration)
+    api.setTimeout(function()
+        GameUI.showLevelSwitchAnimIn()
+    end, cameraMoveDuration - Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
+end
+
+function LevelManager:playCutScenesOut()
+    local cameraManager = CameraManager.instance()
+    local cameraMoveVelocity = math.Vector3(0.8660, 0, 0.5000) * 50.0
+    local cameraMoveDistance = 50.0
+    local cameraMoveDuration = cameraMoveDistance / cameraMoveVelocity:length()
+
+    --- initial camera position
+    cameraManager:setCameraPosition(Global.GAME_CAMERA_CENTER_REFERENCE_POINT - cameraMoveVelocity * cameraMoveDuration)
+
+    cameraManager:cameraMove(cameraMoveVelocity, cameraMoveDuration)
+    GameUI.showLevelSwitchAnimOut()
+end
+
+---comment
+---@param status boolean
+function LevelManager:setDeleteMode(status)
+    self.deleteMode = status
+    if status then
+        GameUI.showDeleteUIBorder()
+    else
+        GameUI.hideDeleteUIBorder()
+    end
+end
+
 -- callback method =============================================================
 function LevelManager:unLoad()
     self.levelInstance = nil
@@ -205,9 +212,8 @@ function LevelManager:click(position)
         -- create cursor
         self:changeCursor(clickRow, clickCol, CursorStatusEnum.DELETE)
         -- delete grid unit logic
-
     else
-        local clickGridUnitRef = self.levelInstance:getGrid()[clickRow][clickCol]
+        local clickGridUnitRef = self.levelInstance.grid[clickRow][clickCol]
         if clickGridUnitRef == nil then
             --create logic
             self:changeCursor(clickRow, clickCol, CursorStatusEnum.CREATE)
@@ -220,7 +226,6 @@ function LevelManager:slide(angle)
     if self.effectiveClick == false then
         return
     end
-
 end
 
 function LevelManager:cancelClick()

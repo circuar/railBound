@@ -33,5 +33,16 @@ function Array.countElement(arr, elem)
     return count
 end
 
+---comment
+---@param arr any
+---@return table
+function Array.copy(arr)
+    local newArray = {}
+    for index, value in ipairs(arr) do
+        newArray[index] = value
+    end
+    return newArray
+end
+
 
 return Array

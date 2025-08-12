@@ -78,7 +78,6 @@ function GameUI.setGameUIRunBtnStatus(status)
 end
 
 ---play level switch animation
----@deprecated
 function GameUI.showLevelSwitchAnim(loadInterval)
     GameUI.showLevelSwitchAnimIn()
 

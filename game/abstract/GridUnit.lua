@@ -6,15 +6,17 @@ GridUnit.__index = GridUnit
 ---output channel will be next used.
 ---
 ---enterChannelMask is a array with four elements.
----
----           top
----       -----------
---- left |    unit   | right
----       -----------
----          bottom
---- 
+---```
+---          TOP
+---     ┌───────────┐
+---     │           │
+--- LEFT│           │RIGHT
+---     │           │
+---     └───────────┘
+---         BOTTOM
+---```
 --- enterChannelMask = { top, right, bottom, left }
---- 
+---
 --- This method is used to determine the direction in which the train instance
 --- should move to the next position in the current unit.
 ---
@@ -27,8 +29,8 @@ GridUnit.__index = GridUnit
 function GridUnit:forward(enterChannelMask) end
 
 function GridUnit:checkEnterPermit(enterDirection) end
-function GridUnit:createAssociatedEntity() end
-function GridUnit:destroyAssociatedEntity() end
+
+function GridUnit:destroy() end
 
 ---when a train enter this grid unit, you can call this method to proxy action
 ---of the train.
@@ -39,8 +41,15 @@ function GridUnit:onEnter(trainInstance) end
 
 ---reset this grid unit status
 function GridUnit:reset() end
+
 function GridUnit:isFixed() end
+
 function GridUnit:getDirectionMask() end
+
 function GridUnit:mirror() end
+
+function GridUnit:isFault()
+
+end
 
 return GridUnit

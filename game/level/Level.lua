@@ -26,11 +26,22 @@ local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 ---@field finalLinkedGridUnitData table
 ---@field finalLinkedGridUnits GridUnit[]
 ---@field gridLineEntityList Unit[]
----@field levelManagerRef LevelManager
 local Level             = {}
 Level.__index           = Level
 
 local logger            = Logger.new("Level")
+
+---comment
+---@param row integer
+---@param col integer
+---@param totalRow integer
+---@param totalCol integer
+---@return Vector3
+local function calcUnitPosition(row, col, totalRow, totalCol)
+    local xCenter = (col - 0.5 - totalCol / 2) * Global.GAME_GRID_SIZE
+    local zCenter = (totalRow / 2 - row + 0.5) * Global.GAME_GRID_SIZE
+    return math.Vector3(xCenter, 0, zCenter)
+end
 
 local function initObjectField(levelInfo)
     local self = {
@@ -42,7 +53,7 @@ local function initObjectField(levelInfo)
         remainRailCount = levelInfo.remainRailCount,
         gridRowSize = levelInfo.levelData.gridSize.row,
         gridColSize = levelInfo.levelData.gridSize.col,
-        gridData = levelInfo.levelData.grid,
+        gridData = levelInfo.levelData,
         grid = {},
         gridPositionMap = {},
         trainData = levelInfo.trainData,
@@ -50,47 +61,36 @@ local function initObjectField(levelInfo)
         finalLinkedGridUnitData = levelInfo.finalLinkedPositionData,
         finalLinkedGridUnits = {},
 
-        gridLineEntityList = {}
+        gridLineEntityList = {},
     }
+    -- init grid
+    for rowIndex, row in ipairs(self.gridData) do
+        -- initialize two-dimensional array
+        self.grid[rowIndex] = {}
+        self.gridPositionMap[rowIndex] = {}
+
+        for colIndex, colElemData in ipairs(row) do
+            local gridUnitPosition = calcUnitPosition(rowIndex, colIndex, self.gridColSize.row, self.gridColSize.col)
+            self.gridPositionMap[rowIndex][colIndex] = gridUnitPosition
+
+            if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
+                self.grid[rowIndex][colIndex] = GridUnitFactory.getInstance(
+                    colElemData.gridUnitType,
+                    colElemData.directionMask,
+                    colElemData.chiralityMask,
+                    gridUnitPosition
+                )
+            end
+        end
+    end
+
     return self
 end
 
 function Level.new(levelInfo)
     local self = initObjectField(levelInfo)
     setmetatable(self, Level)
-    -- init grid unit
-    for rowIndex, row in ipairs(self.gridData) do
-        -- initialize two-dimensional array
-        self.grid[rowIndex] = {}
-        for colIndex, colElemData in ipairs(row) do
-            if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
-                self.grid[rowIndex][colIndex] = GridUnitFactory.getInstance(
-                    colElemData.gridUnitType,
-                    colElemData.directionMask,
-                    colElemData.chiralityMask
-                )
-            end
-        end
-    end
     return self
-end
-
-function Level:setLevelManager(levelManager)
-    self.levelManagerRef = levelManager
-end
-
-function Level:getGrid()
-    return self.grid
-end
-
---- This method will return the row and column size of the current level grid,
---- with the return value formatted as a table that has two attributes: row and
---- col, which represent the size of the rows and columns.
----
---- Such as: `{ row = 1, col = 5 }`
----@return table
-function Level:getGridSize()
-    return {row = self.gridRowSize, col = self.gridColSize}
 end
 
 function Level:renderGridLine()
@@ -132,22 +132,6 @@ function Level:destroyGridLine()
     end
 end
 
-function Level:renderGridUnit()
-    for rowIndex = 1, self.gridRowSize, 1 do
-        for colIndex = 1, self.gridColSize, 1 do
-            self.grid[rowIndex][colIndex]:createAssociatedEntity()
-        end
-    end
-end
-
-function Level:clearGridUnitEntity()
-    for rowIndex = 1, self.gridRowSize, 1 do
-        for colIndex = 1, self.gridColSize, 1 do
-            self.grid[rowIndex][colIndex]:destroyAssociatedEntity()
-        end
-    end
-end
-
 function Level:renderSceneBackground()
     local entityId = GameResource.GAME_SCENE_BACKGROUND_ENTITY_ID_LIST[self.backgroundSceneIndex]
     local sceneEntity = api.base.getEntityById(entityId)
@@ -170,7 +154,8 @@ function Level:renderFilter()
 end
 
 function Level:destroy()
-
+    self:clearSceneBackground()
+    self:destroyGridLine()
 end
 
 return Level
