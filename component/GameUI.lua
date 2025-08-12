@@ -95,4 +95,12 @@ function GameUI.showLevelSwitchAnimOut()
     api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_ANIM_OUT)
 end
 
+function GameUI.showDeleteUIBorder()
+    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_SHOW_DELETE_UI_BORDER)
+end
+
+function GameUI.hideDeleteUIBorder()
+    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_HIDE_DELETE_UI_BORDER)
+end
+
 return GameUI

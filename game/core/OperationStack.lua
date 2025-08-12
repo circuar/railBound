@@ -1,3 +1,4 @@
+---@class OperationStack
 local OperationStack = {}
 OperationStack.__index = OperationStack
 

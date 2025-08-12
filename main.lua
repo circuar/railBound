@@ -1,6 +1,4 @@
 -- main.lua
--- alpha
-
 
 local Logger            = require "logger.Logger"
 local GlobalGameManager = require "game.GlobalGameManager"

@@ -5,7 +5,10 @@ local GameResource = {
     GAME_SCENE_BACKGROUND_ENTITY_ID_LIST = {
         [1] = 0,
         [2] = 0
-    }
+    },
+    GAME_GRID_CREATE_CURSOR_ENTITY_ID = 0,
+    GAME_GRID_DELETE_CURSOR_ENTITY_ID = 0,
+    GAME_GRID_ALTER_CURSOR_ENTITY_ID = 0
 }
 
 return GameResource
