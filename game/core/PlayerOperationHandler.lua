@@ -58,7 +58,7 @@ function PlayerOperationHandler:registerHandlers()
     api.base.registerEventListener(Event.EVENT_GAME_OPERATION_SLIDE, function(data)
         local angle = data.angle
         if angle > 45 and angle <= 135 then
-            
+
         elseif angle > 135 and angle <= 225 then
 
         elseif angle > 225 and angle <= 315 then

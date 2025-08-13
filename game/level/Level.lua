@@ -4,6 +4,8 @@ local GameResource      = require "common.GameResource"
 local Logger            = require "logger.Logger"
 local GridUnitFactory   = require "game.level.GridUnitFactory"
 local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
+local CameraManager     = require "component.CameraManager"
+local Train             = require "game.object.Train"
 -- Level.lua
 
 -- This class should be used as a carrier for the data loaded by LevelLoader and
@@ -14,6 +16,7 @@ local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 ---@field levelIndex integer
 ---@field filterParam table
 ---@field backgroundSceneIndex integer
+---@field cameraDistance number
 ---@field loadSceneEntity Unit
 ---@field remainRailCount integer
 ---@field gridRowSize integer
@@ -49,16 +52,17 @@ local function initObjectField(levelInfo)
         levelIndex = levelInfo.levelIndex,
         filterParam = levelInfo.filterParam,
         backgroundSceneIndex = levelInfo.backgroundSceneIndex,
+        cameraDistance = levelInfo.cameraDistance,
         loadSceneEntity = nil,
-        remainRailCount = levelInfo.remainRailCount,
+        remainRailCount = levelInfo.levelData.remainRailCount,
         gridRowSize = levelInfo.levelData.gridSize.row,
         gridColSize = levelInfo.levelData.gridSize.col,
-        gridData = levelInfo.levelData,
+        gridData = levelInfo.levelData.gridData,
         grid = {},
         gridPositionMap = {},
-        trainData = levelInfo.trainData,
+        trainData = levelInfo.levelData.trainData,
         trains = {},
-        finalLinkedGridUnitData = levelInfo.finalLinkedPositionData,
+        finalLinkedGridUnitData = levelInfo.levelData.finalLinkedPositionData,
         finalLinkedGridUnits = {},
 
         gridLineEntityList = {},
@@ -70,7 +74,7 @@ local function initObjectField(levelInfo)
         self.gridPositionMap[rowIndex] = {}
 
         for colIndex, colElemData in ipairs(row) do
-            local gridUnitPosition = calcUnitPosition(rowIndex, colIndex, self.gridColSize.row, self.gridColSize.col)
+            local gridUnitPosition = calcUnitPosition(rowIndex, colIndex, self.gridRowSize, self.gridColSize)
             self.gridPositionMap[rowIndex][colIndex] = gridUnitPosition
 
             if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
@@ -82,6 +86,14 @@ local function initObjectField(levelInfo)
                 )
             end
         end
+    end
+
+    -- init train object
+    for index, trainData in ipairs(self.trainData) do
+        table.insert(self.trains, Train.new(
+            trainData,
+            self.gridPositionMap[trainData.position.row][trainData.position.col])
+        )
     end
 
     return self
@@ -151,6 +163,11 @@ end
 
 function Level:renderFilter()
 
+end
+
+function Level:setLevelCamera()
+    local cameraManager = CameraManager.instance()
+    cameraManager:setCameraDistance(self.cameraDistance)
 end
 
 function Level:destroy()

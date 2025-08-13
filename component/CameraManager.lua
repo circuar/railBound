@@ -24,7 +24,7 @@ local function constructor()
 
     api.base.setCameraFollowEntity(player, cameraBindEntity, false)
     api.base.setCameraBindMode(player, Enums.CameraBindMode.BIND)
-    api.base.setCameraProjectionMode(player, Enums.CameraProjectionType.PERSPECTIVE)
+    api.base.setCameraProjectionMode(player, Enums.CameraProjectionType.ORTHOGRAPHIC)
     api.base.setCameraDraggable(player, false)
 
     return self
@@ -46,10 +46,12 @@ function CameraManager:gameMode()
     local player = api.getSinglePlayer()
 
     -- set camera param
+
     api.base.setCameraProperty(player, Enums.CameraPropertyType.DIST, 50.0)
-    api.base.setCameraProperty(player, Enums.CameraPropertyType.FOV, 30.0)
-    api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_PITCH, 45.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.FOV, 35.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_PITCH, 55.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_YAW, 30.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.OBSERVER_HEIGHT, 0.0)
 end
 
 function CameraManager:levelSelectMode(currentPage)
@@ -64,10 +66,12 @@ function CameraManager:levelSelectMode(currentPage)
     local player = api.getSinglePlayer()
 
     -- set camera param
+
     api.base.setCameraProperty(player, Enums.CameraPropertyType.DIST, 50.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.FOV, 20.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_PITCH, 0.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_YAW, 180.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.OBSERVER_HEIGHT, 0.0)
 end
 
 function CameraManager:cameraMove(towards, duration)
@@ -80,6 +84,14 @@ end
 
 function CameraManager:setCameraPosition(position)
     api.base.setEntityPosition(self.cameraBindEntity, position)
+end
+
+function CameraManager:setCameraDistance(distance)
+    api.base.setCameraProperty(
+        api.getSinglePlayer(),
+        Enums.CameraPropertyType.DIST,
+        distance
+    )
 end
 
 return CameraManager

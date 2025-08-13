@@ -200,5 +200,42 @@ function base.destroyEntity(entity)
     GameAPI.destroy_unit(entity)
 end
 
+--- send a custom event
+--- this function is used to send a custom event to the game engine.
+---@param event string
+---@param data table?
+function base.sendEvent(event, data)
+    LuaAPI.global_send_custom_event(event, data or {})
+end
+
+---set entity rotation
+---@param entity Unit
+---@param rotation Quaternion
+function api.base.setRotation(entity, rotation)
+    entity.set_orientation(rotation)
+end
+
+---set linear motor velocity
+---@param entity Unit
+---@param motorIndex integer
+---@param velocity Vector3
+---@param localCoordinate boolean?
+function api.base.setLinearMotorVelocity(entity, motorIndex, velocity, localCoordinate)
+    entity.set_linear_motor_velocity(motorIndex, velocity, localCoordinate)
+end
+
+---get entity position
+---@param entity Unit
+---@return Vector3
+function api.base.positionOf(entity)
+    return entity.get_position()
+end
+
+---stop surround motor
+---@param entity Unit
+function api.base.stopSurroundMotor(entity)
+    entity.remove_surround_motor()
+end
+
 api.base = base
 return api

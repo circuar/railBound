@@ -6,7 +6,6 @@ local Logger                 = require "logger.Logger"
 local SceneNameEnum          = require "common.enum.SceneNameEnum"
 local PlayerOperationHandler = require "game.core.PlayerOperationHandler"
 local LevelManager           = require "game.level.LevelManager"
-local GameUI                 = require "component.GameUI"
 local api                    = require "api"
 local Global                 = require "common.Global"
 
@@ -48,7 +47,7 @@ function GameLoader:initGame(levelId)
         CameraManager:gameMode()
         levelManager:playCutScenesIn()
         levelManager:loadLevel(levelId)
-    end, Global.LOAD_UI_FADE_IN_OUT_TIME + 1.0 - Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
+    end, Global.LOAD_UI_FADE_IN_OUT_TIME)
 
     api.setTimeout(function()
         levelManager:playCutScenesOut()

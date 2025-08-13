@@ -44,5 +44,48 @@ function Array.copy(arr)
     return newArray
 end
 
+function Array.removeElement(arr, elem)
+    local writeIndex = 1
+    for readIndex = 1, #arr do
+        if arr[readIndex] ~= elem then
+            arr[writeIndex] = arr[readIndex]
+            writeIndex = writeIndex + 1
+        end
+    end
+
+    for i = writeIndex, #arr do
+        arr[i] = nil
+    end
+end
+
+--- Check that the elements corresponding to each index of the two arrays are
+--- equal.
+--- @param arr1 any[]
+--- @param arr2 any[]
+--- @return boolean
+function Array:equals(arr1, arr2)
+    if #arr1 ~= #arr2 then
+        return false
+    end
+    for index, value in ipairs(arr1) do
+        if value ~= arr2[index] then
+            return false
+        end
+    end
+    return true
+end
+
+---Check if the specified element is included in the array.
+---@param arr any[]
+---@param elem any
+---@return boolean
+function Array.contains(arr, elem)
+    for index, value in ipairs(arr) do
+        if value == elem then
+            return true
+        end
+    end
+    return false
+end
 
 return Array

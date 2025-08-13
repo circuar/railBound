@@ -1,14 +1,19 @@
-local OperationStack    = require "game.core.OperationStack"
-local GameUI            = require "component.GameUI"
-local Logger            = require "logger.Logger"
-local CameraManager     = require "component.CameraManager"
-local Global            = require "common.Global"
-local api               = require "api"
-local GameResource      = require "common.GameResource"
-local CursorStatusEnum  = require "common.enum.CursorStatusEnum"
-local Array             = require "util.Array"
-local GridUnitFactory   = require "game.level.GridUnitFactory"
-local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
+local OperationStack        = require "game.core.OperationStack"
+local GameUI                = require "component.GameUI"
+local Logger                = require "logger.Logger"
+local CameraManager         = require "component.CameraManager"
+local Global                = require "common.Global"
+local api                   = require "api"
+local GameResource          = require "common.GameResource"
+local CursorStatusEnum      = require "common.enum.CursorStatusEnum"
+local Array                 = require "util.Array"
+local GridUnitFactory       = require "game.level.GridUnitFactory"
+local GridUnitClassEnum     = require "common.enum.GridUnitClassEnum"
+local Train                 = require "game.object.Train"
+local PositionDirectionEnum = require "PositionDirectionEnum"
+local Common                = require "util.Common"
+
+
 ---@class LevelManager
 ---@field levelFactory LevelFactory
 ---@field levelInstance Level
@@ -19,12 +24,14 @@ local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 ---@field clickGrid table
 ---@field operationStack OperationStack
 ---@field deleteMode boolean
-local LevelManager      = {}
-LevelManager.__index    = LevelManager
+---@field levelRunning boolean
+---@field trainFaultArray Train[]
+local LevelManager   = {}
+LevelManager.__index = LevelManager
 
-local logger            = Logger.new("LevelManager")
+local logger         = Logger.new("LevelManager")
 
-local instance          = nil
+local instance       = nil
 
 local function createUnitGridRail(grid, row, col, centerPosition)
     local gridUnitRef = grid[row][col]
@@ -64,6 +71,51 @@ local function slideMovableGridUnitRail(grid, row, col, slideDirection)
 
 end
 
+local function calcNextEnterDirection(currentRow, currentCol, nextRow, nextCol)
+    if (currentCol - nextCol) * (currentRow - nextRow) ~= 0 then
+        logger:error("Wrong grid movement direction.")
+        error()
+    end
+
+    if currentRow == nextRow and currentCol == nextCol then
+        return PositionDirectionEnum.CENTER
+    end
+
+    if nextRow - currentRow == 1 then
+        return PositionDirectionEnum.TOP
+    elseif nextRow - currentRow == -1 then
+        return PositionDirectionEnum.BOTTOM
+    elseif nextCol - currentCol == 1 then
+        return PositionDirectionEnum.LEFT
+    else
+        return PositionDirectionEnum.RIGHT
+    end
+end
+
+local function calcNextEnterDirectionMask(currentRow, currentCol, nextRow, nextCol)
+    if (currentCol - nextCol) * (currentRow - nextRow) ~= 0 then
+        logger:error("Wrong grid movement direction.")
+        error()
+    end
+    local directionMask = {}
+    directionMask[1] = Common.ternary(nextRow - currentRow > 0, 1, 0)
+    directionMask[2] = Common.ternary(nextCol - currentCol < 0, 1, 0)
+    directionMask[3] = Common.ternary(nextRow - currentRow < 0, 1, 0)
+    directionMask[4] = Common.ternary(nextCol - currentCol > 0, 1, 0)
+    return directionMask
+end
+
+local function calcGridPositionOffset(row, col, directionMask)
+    if directionMask[1] == 1 then
+        return { row = row - 1, col = col }
+    elseif directionMask[2] == 1 then
+        return { row = row, col = col + 1 }
+    elseif directionMask[3] then
+        return { row = row + 1, col = col }
+    else
+        return { row = row, col = col - 1 }
+    end
+end
 -- constructor =================================================================
 
 
@@ -86,7 +138,9 @@ local function constructor()
         clickPosition = nil,
         clickGrid = {},
         operationStack = OperationStack.new(),
-        deleteMode = false
+        deleteMode = false,
+        levelRunning = false,
+        trainFaultArray = {}
     }, LevelManager)
     return self
 end
@@ -132,13 +186,14 @@ function LevelManager:loadLevel(level)
 
 
     levelInstance:renderFilter()
+    levelInstance:setLevelCamera()
     levelInstance:renderGridLine()
     levelInstance:renderSceneBackground()
 end
 
 function LevelManager:playCutScenesIn()
     local cameraManager = CameraManager.instance()
-    local cameraMoveVelocity = math.Vector3(0.8660, 0, 0.5000) * 50.0
+    local cameraMoveVelocity = math.Vector3(-50, 0, 0)
     local cameraMoveDistance = 50.0
     local cameraMoveDuration = cameraMoveDistance / cameraMoveVelocity:length()
     cameraManager:cameraMove(cameraMoveVelocity, cameraMoveDuration)
@@ -149,7 +204,7 @@ end
 
 function LevelManager:playCutScenesOut()
     local cameraManager = CameraManager.instance()
-    local cameraMoveVelocity = math.Vector3(0.8660, 0, 0.5000) * 50.0
+    local cameraMoveVelocity = math.Vector3(50, 0, 0)
     local cameraMoveDistance = 50.0
     local cameraMoveDuration = cameraMoveDistance / cameraMoveVelocity:length()
 
@@ -171,18 +226,97 @@ function LevelManager:setDeleteMode(status)
     end
 end
 
--- callback method =============================================================
-function LevelManager:unLoad()
+function LevelManager:unLoadLevel()
+    -- unload level instance
+    self.levelInstance:destroy()
     self.levelInstance = nil
+
     self.currentLevelGridSize = nil
+    self.operationStack:clear()
+    self.trainFaultArray = {}
 end
 
-function LevelManager:levelSuccess(successGroupIndex)
+function LevelManager:runLevel()
+    if self.levelRunning then
+        logger:warn("Level already run, skipped")
+        return
+    end
+
+    self.levelRunning = true
+    local grid = self.levelInstance.grid
+    local rowSize = self.levelInstance.gridRowSize
+    local colSize = self.levelInstance.gridColSize
+    local trains = self.levelInstance.trains
+
+    local trainForwardArray = {}
+
+    for index, train in ipairs(trains) do
+        local initForward = train:initForward()
+        trainForwardArray[train.trainId] = { row = initForward.row, col = initForward.col }
+        train:runStartMotor()
+    end
+
+    --- gridUnit loop
+    local function gridUnitLoopTask()
+        for index, train in ipairs(trains) do
+            local nextGridPos        = trainForwardArray[train.trainId]
+            local nextRow            = nextGridPos.row
+            local nextCol            = nextGridPos.col
+            local currentGridPos     = train:getCurrentGridPosition()
+            local currentRow         = currentGridPos.row
+            local currentCol         = currentGridPos.col
+
+            local nextEnterDirection = calcNextEnterDirection(currentRow, currentCol, nextRow, nextCol)
+
+            -- Entry condition: The train is in a non-fault state and has been
+            -- finished and released by the current gridUnit.
+            --
+            -- When the current gridPosition of train is the same as the
+            -- nextGridPosition obtained after the call of the forward function,
+            -- it means that the grid position of the train has not changed in
+            -- the two loops, which means that the train instance is still held
+            -- by the gridUnit, that is, it is being processed, and the train
+            -- instance is skipped to be updated in this loop.
+            if not Array.contains(self.trainFaultArray, train) or (nextRow ~= currentRow and nextCol ~= currentCol) then
+                if (nextRow < 1 or nextRow > rowSize) or (nextCol < 1 or nextCol > colSize) or (grid[nextRow][nextCol] == nil) then
+                    -- Array boundaries.
+                    grid[currentRow][currentCol]:fault()
+                    train:fault()
+                    table.insert(self.trainFaultArray, train)
+                elseif grid[nextRow][nextCol]:checkEnterPermit(nextEnterDirection) == false then
+                    grid[currentRow][currentCol]:fault()
+                    train:fault()
+                    table.insert(self.trainFaultArray, train)
+                else
+                    grid[currentRow][currentCol]:onLeave(train)
+                    local nextEnterDirectionMask = calcNextEnterDirectionMask(currentRow, currentCol, nextRow, nextCol)
+                    trainForwardArray[train.trainId] = calcGridPositionOffset(
+                        currentRow,
+                        currentCol,
+                        grid[nextRow][nextCol]:forward(nextEnterDirectionMask)
+                    )
+                    grid[nextRow][nextCol]:onEnter(train)
+                end
+            end
+        end
+
+        if #self.trainFaultArray == #self.levelInstance.trains then
+        else
+            api.setTimeout(gridUnitLoopTask, Global.GAME_GRID_LOOP_FRAME_COUNT, true)
+        end
+    end
+
+    api.setTimeout(gridUnitLoopTask, Train.getInitForwardDuration())
+end
+
+-- callback method =============================================================
+
+function LevelManager:trainSuccessSignal(successGroupIndex)
 
 end
 
-function LevelManager:levelFailed(failedTrainId)
-
+function LevelManager:trainFailedSignal(failedTrainId)
+    table.insert(self.trainFaultArray, self.levelInstance.trains[failedTrainId])
 end
 
 ---

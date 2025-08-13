@@ -37,51 +37,101 @@ local function rotationCornerRailCalc(directionMask)
     return (maskBitSearch - 1) * math.pi / 2
 end
 
+function FixedNormalRail:renderEntity()
+    local zeroDirection = Array.find(self.directionMask, 0)
+    local entityList = {}
+    -- create straight rail entity
+    if zeroDirection % 2 == 0 then
+        entityList[1] = api.base.createEntity(
+            GameResource.GAME_RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
+            self.position,
+            math.Quaternion(0, 0, 0),
+            math.Vector3(1, 1, 1)
+        )
+    else
+        entityList[1] = api.base.createEntity(
+            GameResource.GAME_RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
+            self.position,
+            math.Quaternion(0, math.pi / 2, 0),
+            math.Vector3(1, 1, 1)
+        )
+    end
 
----TODO init render grid unit
 
+    if self.channelCount == 3 then
+        entityList[2] = api.base.createEntity(
+            GameResource.GAME_RAIL_ENTITY_CORNER_PRESET_ID,
+            self.position,
+            math.Quaternion(0, rotationCornerRailCalc(self.directionMask), 0),
+            math.Vector3(1, 1, 1)
+        )
+    end
+    return entityList
+end
 
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, position)
     local channelCount = Array.countElement(directionMask, 1)
     local self = setmetatable({
         directionMask = Array.copy(directionMask),
-        chiralityMask = chiralityMask,
+        chiralityMask = chiralityMask or 1,
         channelCount = channelCount,
-        position = position
+        position = position,
+        entityList = {}
     }, FixedNormalRail)
+
+    logger:debug("Create FixedNormalRail, directionMask = " ..
+        table.concat(self.directionMask, ", ") .. ", chiralityMask = " .. self.chiralityMask)
+    self.entityList = self:renderEntity()
+
     return self
 end
 
+---Override
 ---@param enterDirection PositionDirectionEnum
 function FixedNormalRail:checkEnterPermit(enterDirection)
     return self.directionMask[enterDirection] == 1
 end
 
+---Override
 ---@return integer[]
 function FixedNormalRail:getDirectionMask()
     return self.directionMask
 end
 
+---Override
 ---@return boolean
 function FixedNormalRail:isFixed()
     return true
 end
 
+---Override
+function FixedNormalRail:isFault()
+
+end
+
+---Override
 function FixedNormalRail:mirror()
     logger:error("This class usually doesn't support the mirror() method, " ..
         "check if the function is called correctly.")
     error()
 end
 
+---Override
 function FixedNormalRail:onEnter(trainInstance)
 
 end
 
+function FixedNormalRail:onLeave(trainInstance)
+
+end
+
+---Override
 function FixedNormalRail:reset()
 
 end
 
+---Override
 function FixedNormalRail:destroy()
     logger:debug("Destroy component entity.")
     for index, value in ipairs(self.entityList) do
@@ -89,7 +139,7 @@ function FixedNormalRail:destroy()
     end
 end
 
----comment
+---Override
 ---@param enterDirection PositionDirectionEnum
 ---@return integer
 function FixedNormalRail:forward(enterDirection)

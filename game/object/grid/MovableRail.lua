@@ -16,13 +16,7 @@ function MovableRail.new()
     return self
 end
 
-function MovableRail:createAssociatedEntity()
-    
-end
 
-function MovableRail:destroyAssociatedEntity()
-    
-end
 
 function MovableRail:forward()
     

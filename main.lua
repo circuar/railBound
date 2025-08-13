@@ -25,3 +25,5 @@ end, 10.0)
 -- api.setTimeout(function()
 --     GameUI.showLoadUI(1.0)
 -- end, 10.0)
+
+print(" \033[32m" .. "this is green color")

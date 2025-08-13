@@ -6,6 +6,7 @@ return {
 
         },
         backgroundSceneIndex = 1,
+        cameraDistance = 150.0,
         levelData = {
             remainRailCount = 3,
 
@@ -22,6 +23,7 @@ return {
 
             trainData = {
                 {
+                    trainId = 1,
                     sequenceId = 1,
                     trainType = "normal",
                     trainGroup = 1,
