@@ -39,6 +39,8 @@ function GridUnit:destroy() end
 ---@param trainInstance any
 function GridUnit:onEnter(trainInstance) end
 
+function GridUnit:wait(trainInstance) end
+
 function GridUnit:onLeave(trainInstance) end
 
 ---reset this grid unit status
@@ -46,11 +48,8 @@ function GridUnit:reset() end
 
 function GridUnit:isFixed() end
 
-function GridUnit:getDirectionMask() end
-
-function GridUnit:mirror() end
-
 function GridUnit:isFault() end
 
 function GridUnit:fault() end
+
 return GridUnit

@@ -1,6 +1,7 @@
 local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 local FixedNormalRail = require "game.object.grid.FixedNormalRail"
 local Logger = require "logger.Logger"
+local FinalLinkedRail = require "game.object.grid.FinalLinkedRail"
 
 ---@class GridUnitFactory
 local GridUnitFactory = {}
@@ -10,16 +11,19 @@ local logger = Logger.new("GridUnitFactory")
 
 local gridUnitClassMap = {
     [GridUnitClassEnum.RAIL_NORMAL_FIXED] = FixedNormalRail,
+    [GridUnitClassEnum.RAIL_FINAL] = FinalLinkedRail
+
 }
 
 
 ---@param gridUnitClassType GridUnitClassEnum
 ---@param directionMask integer[]
 ---@param chiralityMask integer
+---@param extraData table?
 ---@param position Vector3
-function GridUnitFactory.getInstance(gridUnitClassType, directionMask, chiralityMask, position)
+function GridUnitFactory.getInstance(gridUnitClassType, directionMask, chiralityMask, position, extraData, levelManager)
     logger:debug("Creating grid unit of type: " .. gridUnitClassType)
-    local gridUnitInstance = gridUnitClassMap[gridUnitClassType].new(directionMask, chiralityMask, position)
+    local gridUnitInstance = gridUnitClassMap[gridUnitClassType].new(directionMask, chiralityMask, position, extraData, levelManager)
     return gridUnitInstance
 end
 

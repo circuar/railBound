@@ -13,11 +13,11 @@ return {
             gridSize = { row = 1, col = 5 },
             gridData = {
                 [1] = {
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil },
-                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = nil,            chiralityMask = nil },
-                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = nil,            chiralityMask = nil },
-                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = nil,            chiralityMask = nil },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil },
+                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
+                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = nil,            chiralityMask = nil, extraData = {} },
+                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = nil,            chiralityMask = nil, extraData = {} },
+                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = nil,            chiralityMask = nil, extraData = {} },
+                    { gridUnitType = GridUnitTypeEnum.RAIL_FINAL,        directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = { group = 1, trainSpaceLength = 10.0 } },
                 }
             },
 
@@ -31,10 +31,6 @@ return {
                     directionMask = { 0, 1, 0, 0 }
                 }
             },
-            finalLinkedGridUnitData = {
-                { group = 1, row = 1, col = 5 }
-            }
-
         }
     }
 }

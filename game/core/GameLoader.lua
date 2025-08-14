@@ -45,12 +45,12 @@ function GameLoader:initGame(levelId)
 
     api.setTimeout(function()
         CameraManager:gameMode()
-        levelManager:playCutScenesIn()
+        levelManager:playCusSceneIn()
         levelManager:loadLevel(levelId)
     end, Global.LOAD_UI_FADE_IN_OUT_TIME)
 
     api.setTimeout(function()
-        levelManager:playCutScenesOut()
+        levelManager:playCusSceneOut()
     end, Global.LOAD_UI_FADE_IN_OUT_TIME + 1.0)
 end
 

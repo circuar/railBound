@@ -17,19 +17,23 @@ local Logger                = require "logger.Logger"
 ---@field initDirection PositionDirectionEnum
 ---@field currentDirection PositionDirectionEnum
 ---@field entityList Unit[]
+---@field trainLength number
 local Train = {}
 Train.__index = Train
 
-
-
-
 local logger = Logger.new("Train")
+
+local TRAIN_LENGTH_MAP = {
+    ["NORMAL"] = 8.0,
+    ["TAIL"] = 7.0
+}
 
 
 local LINEAR_MOTOR_INDEX = 1
 local START_EDGE_DISTANCE = 1.0
 local INIT_FORWARD_DURATION = START_EDGE_DISTANCE / Global.GAME_GRID_SIZE * Global.GAME_GRID_LOOP_FRAME_COUNT /
     Global.LOGIC_FPS
+local TRAIN_SPEED = Global.GAME_GRID_SIZE * Global.LOGIC_FPS / Global.GAME_GRID_LOOP_FRAME_COUNT
 
 local function directionToRotation(trainDirection)
     return math.Quaternion(0, math.pi / 2 * (trainDirection - 1), 0)
@@ -53,10 +57,12 @@ function Train.new(trainData, position)
     local initRowPosition = trainData.position.row
     local initColPosition = trainData.position.col
     local direction = Array.find(trainData.directionMask, 1)
+    local trainType = trainData.trainType
+
     local self = setmetatable({
         trainId = trainData.trainId,
         sequenceId = trainData.sequenceId,
-        trainType = trainData.trainType,
+        trainType = trainType,
         trainGroup = trainData.trainGroup,
         initGridPosition = { row = initRowPosition, col = initColPosition },
         currentGridPosition = { row = initRowPosition, col = initColPosition },
@@ -64,7 +70,8 @@ function Train.new(trainData, position)
         directionMask = trainData.directionMask,
         initDirection = direction,
         currentDirection = direction,
-        entityList = {}
+        entityList = {},
+        trainLength = TRAIN_LENGTH_MAP[trainType]
     }, Train)
 
     return self
@@ -72,6 +79,14 @@ end
 
 function Train.getInitForwardDuration()
     return INIT_FORWARD_DURATION
+end
+
+function Train.getTrainSpeed()
+    return TRAIN_SPEED
+end
+
+function Train:getTrainLength()
+    return self.trainLength
 end
 
 function Train:setPosition(position)
@@ -137,8 +152,7 @@ function Train:getSequenceId()
 end
 
 function Train:runStartMotor()
-    local speed = Global.GAME_GRID_SIZE * Global.LOGIC_FPS / Global.GAME_GRID_LOOP_FRAME_COUNT
-    local velocity = speed * directionToVector(self.initDirection)
+    local velocity = TRAIN_SPEED * directionToVector(self.initDirection)
     self:addLinearMotor(velocity, INIT_FORWARD_DURATION)
 end
 
@@ -152,7 +166,7 @@ function Train:initForward()
 end
 
 function Train:fault()
-    
+
 end
 
 return Train

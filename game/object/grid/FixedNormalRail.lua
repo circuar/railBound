@@ -10,6 +10,7 @@ local GameResource = require "common.GameResource"
 ---@field private channelCount integer
 ---@field private position Vector3
 ---@field private entityList Unit[]
+---@field private levelManager LevelManager
 local FixedNormalRail = {}
 FixedNormalRail.__index = FixedNormalRail
 
@@ -70,14 +71,15 @@ function FixedNormalRail:renderEntity()
 end
 
 ---Constructor
-function FixedNormalRail.new(directionMask, chiralityMask, position)
+function FixedNormalRail.new(directionMask, chiralityMask, position, extraData, levelManager)
     local channelCount = Array.countElement(directionMask, 1)
     local self = setmetatable({
         directionMask = Array.copy(directionMask),
         chiralityMask = chiralityMask or 1,
         channelCount = channelCount,
         position = position,
-        entityList = {}
+        entityList = {},
+        levelManager = levelManager
     }, FixedNormalRail)
 
     logger:debug("Create FixedNormalRail, directionMask = " ..
@@ -93,11 +95,11 @@ function FixedNormalRail:checkEnterPermit(enterDirection)
     return self.directionMask[enterDirection] == 1
 end
 
----Override
----@return integer[]
-function FixedNormalRail:getDirectionMask()
-    return self.directionMask
-end
+-- ---Override
+-- ---@return integer[]
+-- function FixedNormalRail:getDirectionMask()
+--     return self.directionMask
+-- end
 
 ---Override
 ---@return boolean
@@ -110,12 +112,7 @@ function FixedNormalRail:isFault()
 
 end
 
----Override
-function FixedNormalRail:mirror()
-    logger:error("This class usually doesn't support the mirror() method, " ..
-        "check if the function is called correctly.")
-    error()
-end
+
 
 ---Override
 function FixedNormalRail:onEnter(trainInstance)

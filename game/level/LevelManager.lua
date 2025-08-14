@@ -10,8 +10,9 @@ local Array                 = require "util.Array"
 local GridUnitFactory       = require "game.level.GridUnitFactory"
 local GridUnitClassEnum     = require "common.enum.GridUnitClassEnum"
 local Train                 = require "game.object.Train"
-local PositionDirectionEnum = require "PositionDirectionEnum"
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Common                = require "util.Common"
+local FrameTimer            = require "game.core.FrameTimer"
 
 
 ---@class LevelManager
@@ -26,6 +27,9 @@ local Common                = require "util.Common"
 ---@field deleteMode boolean
 ---@field levelRunning boolean
 ---@field trainFaultArray Train[]
+---@field trainSuccessArray Train[]
+---@field trainGroupSuccessArray integer[]
+---@field gameLoopTimer FrameTimer
 local LevelManager   = {}
 LevelManager.__index = LevelManager
 
@@ -51,7 +55,7 @@ end
 
 
 ---comment
----@param grid GridUnit[][]
+---@param grid MovableRail[][]
 ---@param row integer
 ---@param col integer
 local function clickMovableGridUnitRail(grid, row, col)
@@ -191,7 +195,7 @@ function LevelManager:loadLevel(level)
     levelInstance:renderSceneBackground()
 end
 
-function LevelManager:playCutScenesIn()
+function LevelManager:playCusSceneIn()
     local cameraManager = CameraManager.instance()
     local cameraMoveVelocity = math.Vector3(-50, 0, 0)
     local cameraMoveDistance = 50.0
@@ -202,7 +206,7 @@ function LevelManager:playCutScenesIn()
     end, cameraMoveDuration - Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
 end
 
-function LevelManager:playCutScenesOut()
+function LevelManager:playCusSceneOut()
     local cameraManager = CameraManager.instance()
     local cameraMoveVelocity = math.Vector3(50, 0, 0)
     local cameraMoveDistance = 50.0
@@ -300,26 +304,146 @@ function LevelManager:runLevel()
             end
         end
 
-        if #self.trainFaultArray == #self.levelInstance.trains then
+        -- task loop termination condition judgment.
+        if #self.trainFaultArray == #self.levelInstance.trains or #self.trainSuccessArray == #self.levelInstance.trains then
+            logger:info("Level manager task loop stop.")
         else
             api.setTimeout(gridUnitLoopTask, Global.GAME_GRID_LOOP_FRAME_COUNT, true)
         end
+    end
+    if #self.trainSuccessArray == #self.levelInstance.trains then
+        -- do success
+        self.levelRunning = false
+        return
     end
 
     api.setTimeout(gridUnitLoopTask, Train.getInitForwardDuration())
 end
 
+function LevelManager:runLevelV2()
+    if self.levelRunning then
+        logger:warn("Level already run, skipped")
+        return
+    end
+
+    self.levelRunning = true
+
+    local grid = self.levelInstance.grid
+    local rowSize = self.levelInstance.gridRowSize
+    local colSize = self.levelInstance.gridColSize
+    local trains = self.levelInstance.trains
+
+    local trainForwardArray = {}
+
+    for index, train in ipairs(trains) do
+        local initForward = train:initForward()
+        trainForwardArray[train.trainId] = { row = initForward.row, col = initForward.col }
+        train:runStartMotor()
+    end
+
+    local gameLoopTimer = FrameTimer.new(Global.GAME_GRID_LOOP_FRAME_COUNT, true)
+    gameLoopTimer:setTask(function ()
+        local operationTrainList = {}
+        for index, train in ipairs(trains) do
+            local nextGridPos    = trainForwardArray[train.trainId]
+            local nextRow        = nextGridPos.row
+            local nextCol        = nextGridPos.col
+            local currentGridPos = train:getCurrentGridPosition()
+            local currentRow     = currentGridPos.row
+            local currentCol     = currentGridPos.col
+
+
+            -- When this loop is executed, the end of the game condition must
+            -- not be met, because once the end of the game condition is met,
+            -- the timer loop will stop after the signal is sent.
+            --
+            -- First, determine whether the traversed trains are in the success
+            -- array or failed array, and if so, skip these train instances.
+            if not Array.contains(self.trainFaultArray, train) or (nextRow ~= currentRow and nextCol ~= currentCol) then
+                if (nextRow < 1 or nextRow > rowSize) or (nextCol < 1 or nextCol > colSize) or (grid[nextRow][nextCol] == nil) then
+                    -- Array boundaries.
+                    grid[currentRow][currentCol]:fault()
+                    train:fault()
+                    table.insert(self.trainFaultArray, train)
+                elseif grid[nextRow][nextCol]:checkEnterPermit(nextEnterDirection) == false then
+                    grid[currentRow][currentCol]:fault()
+                    train:fault()
+                    table.insert(self.trainFaultArray, train)
+                else
+                    table.insert(operationTrainList, train)
+                end
+            end
+        end
+
+        grid[currentRow][currentCol]:onLeave(train)
+        local nextEnterDirectionMask = calcNextEnterDirectionMask(currentRow, currentCol, nextRow, nextCol)
+        trainForwardArray[train.trainId] = calcGridPositionOffset(
+            currentRow,
+            currentCol,
+            grid[nextRow][nextCol]:forward(nextEnterDirectionMask)
+        )
+        grid[nextRow][nextCol]:onEnter(train)
+
+
+
+    end)
+    self.gameLoopTimer = gameLoopTimer
+    gameLoopTimer:run()
+end
+
+
+
+
+
+
+function LevelManager:nextLevel()
+    for index, finalLinkedGridUnit in ipairs(self.levelInstance.finalLinkedGridUnits) do
+        finalLinkedGridUnit:launch()
+    end
+end
+
+
+
+
+
+
 -- callback method =============================================================
 
-function LevelManager:trainSuccessSignal(successGroupIndex)
+--- Called when the carriages of the current group are fully connected
+--- correctly.
+---
+--- This function call must have a delay compared to the last taskLoop.
+--- @param groupId integer
+function LevelManager:trainGroupSuccessSignal(groupId)
 
 end
 
+--- Called when the carriage enters the terminal GridUnit and will be
+--- successfully connected.
+---
+--- This method is called when the train instance enters the endpoint gridUnit,
+--- that is, in the onEnter() function. The game cannot be completely finished
+--- in this function, because there is still some distance between the
+--- carriages, and there should be time for the carriages to be fully linked.
+---
+--- This is designed so that the cycle timer can stop as early as possible.
+--- Avoid players operating between two timer loops, causing data changes in the
+--- grid and causing the timer to stop properly.
+---@param successTrainId integer
+function LevelManager:trainSuccessSignal(successTrainId)
+    table.insert(self.trainFaultArray, self.levelInstance.trains[successTrainId])
+end
+
+--- It is called when the train breaks down, including collisions, incorrect
+--- connection sequences, etc.
+---
+--- This function is called at the same time as
+--- trainSuccessSignal(successTrainId).
+---@param failedTrainId integer
 function LevelManager:trainFailedSignal(failedTrainId)
     table.insert(self.trainFaultArray, self.levelInstance.trains[failedTrainId])
 end
 
----
 ---@param position Vector3
 function LevelManager:click(position)
     local posX = position.x

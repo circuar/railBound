@@ -12,6 +12,7 @@ local Logger = require "logger.Logger"
 ---@field private initialTrainInstance Train
 ---@field private runningTrainInstanceList Train[]
 ---@field private fault boolean
+---@field private levelManager LevelManager
 local TrainStartRail = {}
 TrainStartRail.__index = TrainStartRail
 
@@ -40,7 +41,7 @@ local function renderEntity(directionMask, position)
     return entityList
 end
 
-function TrainStartRail.new(directionMask, chiralityMask, position)
+function TrainStartRail.new(directionMask, chiralityMask, position, extraData, levelManager)
     local self = setmetatable({
         directionMask = directionMask,
         channelCount = 2,
@@ -49,7 +50,8 @@ function TrainStartRail.new(directionMask, chiralityMask, position)
         initialTrainId = nil,
         initialTrainInstance = nil,
         runningTrainInstanceList = {},
-        fault = false
+        fault = false,
+        levelManager = levelManager
     }, TrainStartRail)
 
     self.entityList[1] = renderEntity(self.directionMask, self.position)
@@ -69,23 +71,16 @@ function TrainStartRail:checkEnterPermit(enterDirection)
     return self.directionMask[enterDirection] == 1
 end
 
----Override
----@return integer[]
-function TrainStartRail:getDirectionMask()
-    return self.directionMask
-end
+-- ---Override
+-- ---@return integer[]
+-- function TrainStartRail:getDirectionMask()
+--     return self.directionMask
+-- end
 
 ---Override
 ---@return boolean
 function TrainStartRail:isFixed()
     return true
-end
-
----Override
-function TrainStartRail:mirror()
-    logger:error("This class usually doesn't support the mirror() method, " ..
-        "check if the function is called correctly.")
-    error()
 end
 
 ---Override
@@ -99,7 +94,6 @@ function TrainStartRail:onEnter(trainInstance)
         -- it will not enter, so here only the number of train instances held
         -- needs to be judged.
         self.fault = true
-        
     end
 end
 
