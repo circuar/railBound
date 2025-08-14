@@ -1865,7 +1865,7 @@ function GameAPI.ability_prefab_get_desc(_ability_id) end
 ---@return string 技能名称
 function GameAPI.ability_prefab_get_name(_ability_id) end
 
----获取触发区域预设的属性
+---获取技能预设的属性
 ---@param _value_type Enums.ValueType 值类型
 ---@param _key AbilityKey 技能编号
 ---@param _prop string 名称
@@ -2076,6 +2076,12 @@ function GameAPI.destroy_unit_with_children(_unit, _destroy_children) end
 ---@param _unit_2 Unit 单位2
 ---@param _enable boolean 是否碰撞
 function GameAPI.enable_collision_between_units(_unit_1, _unit_2, _enable) end
+
+---物品预设是否存在自定义值
+---@param _equipment_key EquipmentKey 物品编号
+---@param _prop string 名称
+---@return boolean 是否存在
+function GameAPI.equipment_prefab_has_kv(_equipment_key, _prop) end
 
 ---游戏结束
 function GameAPI.game_end() end
@@ -2460,9 +2466,9 @@ function GameAPI.modifier_prefab_get_desc(_modifier_key) end
 ---@return string 效果名称
 function GameAPI.modifier_prefab_get_name(_modifier_key) end
 
----获取触发区域预设的属性
+---获取效果预设的属性
 ---@param _value_type Enums.ValueType 值类型
----@param _key ModifierKey 技能编号
+---@param _key ModifierKey 效果编号
 ---@param _prop string 名称
 ---@return any 属性值
 function GameAPI.modifier_prefab_get_prop_by_type(_value_type, _key, _prop) end
