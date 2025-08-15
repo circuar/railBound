@@ -307,7 +307,7 @@ function LevelManager:runLevel()
             end
         end
 
-        for index, train in ipairs(trains) do
+        for index, train in ipairs(loopOperationTrains) do
             local currentRow = train:getCurrentGridPosition().row
             local currentCol = train:getCurrentGridPosition().col
 
