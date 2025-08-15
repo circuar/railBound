@@ -41,6 +41,8 @@ function GridUnit:onEnter(trainInstance) end
 
 function GridUnit:wait(trainInstance) end
 
+function GridUnit:resume(trainInstance) end
+
 function GridUnit:onLeave(trainInstance) end
 
 ---reset this grid unit status
@@ -51,5 +53,7 @@ function GridUnit:isFixed() end
 function GridUnit:isFault() end
 
 function GridUnit:fault() end
+
+function GridUnit:await() end
 
 return GridUnit
