@@ -24,7 +24,7 @@ local function constructor()
 
     api.base.setCameraFollowEntity(player, cameraBindEntity, false)
     api.base.setCameraBindMode(player, Enums.CameraBindMode.BIND)
-    api.base.setCameraProjectionMode(player, Enums.CameraProjectionType.ORTHOGRAPHIC)
+    api.base.setCameraProjectionMode(player, Enums.CameraProjectionType.PERSPECTIVE)
     api.base.setCameraDraggable(player, false)
 
     return self
@@ -67,8 +67,8 @@ function CameraManager:levelSelectMode(currentPage)
 
     -- set camera param
 
-    api.base.setCameraProperty(player, Enums.CameraPropertyType.DIST, 50.0)
-    api.base.setCameraProperty(player, Enums.CameraPropertyType.FOV, 20.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.DIST, 0.0)
+    api.base.setCameraProperty(player, Enums.CameraPropertyType.FOV, 40.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_PITCH, 0.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.BIND_MODE_YAW, 180.0)
     api.base.setCameraProperty(player, Enums.CameraPropertyType.OBSERVER_HEIGHT, 0.0)

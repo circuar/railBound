@@ -1,7 +1,7 @@
 local Logger = require "logger.Logger"
 
 
----@class LevelDataManager
+---@class LevelMetaDataManager
 ---@field private levelMetaData table
 ---@field private levelCount integer
 local LevelMetaDataManager = {}
@@ -38,10 +38,14 @@ function LevelMetaDataManager:getLevelMetaData(levelIndex)
 end
 
 function LevelMetaDataManager:checkLevelUnlock(levelIndex, mainLevelProgress)
+    print(levelIndex)
+    print(mainLevelProgress)
+
     local mainLevelIndexTempPointer = levelIndex
     local loopCount = 0
     local maxSearchLoopCount = 10
-    while self.levelMetaData[mainLevelIndexTempPointer].isExtraLevel == false do
+
+    while self.levelMetaData[mainLevelIndexTempPointer].isExtraLevel == true do
         mainLevelIndexTempPointer = self.levelMetaData[mainLevelIndexTempPointer].preLevelIndex
         loopCount = loopCount + 1
         if loopCount > maxSearchLoopCount then
@@ -53,7 +57,7 @@ function LevelMetaDataManager:checkLevelUnlock(levelIndex, mainLevelProgress)
             error()
         end
     end
-    return levelIndex <= mainLevelProgress + 1
+    return mainLevelIndexTempPointer <= mainLevelProgress + 1
 end
 
 function LevelMetaDataManager:getLevelMetaDataList()

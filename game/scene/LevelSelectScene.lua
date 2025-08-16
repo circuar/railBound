@@ -89,7 +89,9 @@ end
 ---register level select event listener
 ---when player click level button, this function will be called.
 function LevelSelectScene:registerLevelSelectListener()
-    api.base.registerEventListener(Event.GLOBAL_LEVEL_SELECT, function(data)
+    api.base.registerDataEventListener(Event.EVENT_LEVEL_SELECT_TOUCH, function(name, unit, data)
+        logger:debug("Level select touch. Event data: " .. tostring(data.position))
+
         ---@type Vector3
         local clickPosition = data.position
         clickPosition.z = 0
@@ -100,7 +102,7 @@ function LevelSelectScene:registerLevelSelectListener()
         local levelMetaDataList = levelMetaDataManager:getLevelMetaDataList()
 
         for index, levelMetaData in ipairs(levelMetaDataList) do
-            if Vector.distanceBetween(clickPosition, math.Vector3(levelMetaData.buttonXYPosition[1], levelMetaData.buttonXYPosition[2], 0)) <= 5 then
+            if Vector.distanceBetween(clickPosition, math.Vector3(levelMetaData.buttonXYPosition[1], levelMetaData.buttonXYPosition[2], 0)) <= 5.0 then
                 if levelMetaDataManager:checkLevelUnlock(levelMetaData.levelIndex, ArchiveManager.instance():getMainLineProgress()) == false then
                     api.base.showTips("请先通过之前的关卡", 3.0)
                     return

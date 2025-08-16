@@ -1,15 +1,16 @@
-local levelButtonPositionData = {
+local levelMetaData = {
     [1] = {
         levelIndex = 1,
         levelLabel = "1-1",
 
-        buttonXYPosition = { 0, 0 },
+        buttonXYPosition = { 479.0, 72.5 },
         pageIndex = 1,
         preLevelIndex = nil,
         postMainLevelIndex = 2,
-        postLevelList = {2},
+        postLevelList = { 2 },
         isExtraLevel = false
     },
-    [2] = {
-    }
+
 }
+
+return levelMetaData

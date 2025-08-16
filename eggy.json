@@ -1,7 +1,7 @@
 {
-    "projectName": "2", 
-    "projectID": "6890237c421aa911294734bf", 
-    "serverPort": 46767, 
+    "projectName": "轨道连结", 
+    "projectID": "68a01bb0421aa903ce63ef9c", 
+    "serverPort": 13615, 
     "syncEnabled": true, 
     "excludePatterns": [
         ".vscode", 

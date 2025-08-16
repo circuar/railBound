@@ -1,3 +1,8 @@
+local api = require "api"
+local ArchiveIndex = require "common.ArchiveIndex"
+
+
+
 local ArchiveManager = {}
 ArchiveManager.__index = ArchiveManager
 
@@ -15,20 +20,18 @@ function ArchiveManager.instance()
     return instance
 end
 
+---Get level main line progress.
+---@return integer
 function ArchiveManager:getMainLineProgress()
-
+    local player = api.getSinglePlayer()
+    return api.base.getArchiveData(player, ArchiveIndex.MAIN_LINE_PROGRESS_INDEX, Enums.ArchiveType.Int)
 end
 
-function ArchiveManager:getSideLineProgress()
-
-end
-
+---Set level main line progress.
+---@param levelIndex integer
 function ArchiveManager:setMainLineProgress(levelIndex)
-    
-end
-
-function ArchiveManager:setSideLineProgress(sideLineProgress)
-    
+    local player = api.getSinglePlayer()
+    api.base.setArchiveData(player, ArchiveIndex.MAIN_LINE_PROGRESS_INDEX, levelIndex, Enums.ArchiveType.Int)
 end
 
 return ArchiveManager

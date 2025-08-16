@@ -68,9 +68,18 @@ end
 
 ---register custom event listener
 ---@param event string
----@param callback fun(data:table):nil
+---@param callback fun():nil
+---@return integer listenerId
 function base.registerEventListener(event, callback)
-    LuaAPI.global_register_custom_event(event, callback)
+    return LuaAPI.global_register_custom_event(event, callback)
+end
+
+---register global event listener with data receiver
+---@param eventName string
+---@param callback fun(name:string, unit:Unit, data:table)
+---@return integer listenerId
+function base.registerDataEventListener(eventName, callback)
+    return LuaAPI.global_register_trigger_event({ EVENT.CUSTOM_EVENT, eventName }, callback)
 end
 
 ---add linear motor to unit
@@ -211,7 +220,7 @@ end
 ---set entity rotation
 ---@param entity Unit
 ---@param rotation Quaternion
-function api.base.setRotation(entity, rotation)
+function base.setRotation(entity, rotation)
     entity.set_orientation(rotation)
 end
 
@@ -220,21 +229,39 @@ end
 ---@param motorIndex integer
 ---@param velocity Vector3
 ---@param localCoordinate boolean?
-function api.base.setLinearMotorVelocity(entity, motorIndex, velocity, localCoordinate)
+function base.setLinearMotorVelocity(entity, motorIndex, velocity, localCoordinate)
     entity.set_linear_motor_velocity(motorIndex, velocity, localCoordinate)
 end
 
 ---get entity position
 ---@param entity Unit
 ---@return Vector3
-function api.base.positionOf(entity)
+function base.positionOf(entity)
     return entity.get_position()
 end
 
 ---stop surround motor
 ---@param entity Unit
-function api.base.stopSurroundMotor(entity)
+function base.stopSurroundMotor(entity)
     entity.remove_surround_motor()
+end
+
+---Set player archive data
+---@param player Role
+---@param index integer
+---@param data any
+---@param dataType Enums.ArchiveType
+function base.setArchiveData(player, index, data, dataType)
+    player.set_archive_by_type(dataType, index, data)
+end
+
+---get player archive data
+---@param player Role
+---@param index integer
+---@param dataType Enums.ArchiveType
+---@return any archiveData
+function base.getArchiveData(player, index, dataType)
+    return player.get_archive_by_type(dataType, index)
 end
 
 api.base = base
