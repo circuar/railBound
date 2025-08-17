@@ -1,21 +1,10 @@
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 ---@class GridUnit
 local GridUnit = {}
 GridUnit.__index = GridUnit
 
 ---if the train will enter this unit, you can call this method to know which
 ---output channel will be next used.
----
----enterChannelMask is a array with four elements.
----```
----          TOP
----     ┌───────────┐
----     │           │
---- LEFT│           │RIGHT
----     │           │
----     └───────────┘
----         BOTTOM
----```
---- enterChannelMask = { top, right, bottom, left }
 ---
 --- This method is used to determine the direction in which the train instance
 --- should move to the next position in the current unit.
@@ -25,8 +14,17 @@ GridUnit.__index = GridUnit
 ---
 --- It is necessary to check the return value of `checkEnterPermit()` before
 --- calling this method.
----@param enterChannelMask integer[]
-function GridUnit:forward(enterChannelMask) end
+---@param enterDirection PositionDirectionEnum
+---@return table
+function GridUnit:forward(enterDirection) return {} end
+
+--- Obtain the direction in which the train leaves the GridUnit when entering
+--- from a specified direction under the current conditions.
+---@param enterDirection PositionDirectionEnum
+---@return PositionDirectionEnum
+function GridUnit:forwardDirection(enterDirection)
+    return PositionDirectionEnum.CENTER
+end
 
 function GridUnit:checkEnterPermit(enterDirection) end
 

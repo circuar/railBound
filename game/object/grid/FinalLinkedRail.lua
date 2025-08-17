@@ -1,9 +1,11 @@
 local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Logger                = require "logger.Logger"
 local api                   = require "api"
+local Array                 = require "util.Array"
 
 
 ---@class FinalLinkedRail:GridUnit
+---@field directionMask integer[]
 ---@field position Vector3
 ---@field finalLinkedData table
 ---@field trainConnectSpaceLength number
@@ -11,21 +13,23 @@ local api                   = require "api"
 ---@field enterTrainInstanceArray Train[]
 ---@field spaceLengthPointer number
 ---@field levelManager LevelManager
+---@field entityList Unit[]
 local FinalLinkedRail   = {}
 FinalLinkedRail.__index = FinalLinkedRail
 
 local logger            = Logger.new("FinalLinkedRail")
 
-
 function FinalLinkedRail.new(directionMask, chiralityMask, position, extraData, levelManager)
     local self = setmetatable({
+        directionMask = Array.copy(directionMask),
         position = position,
         finalLinkedData = extraData,
         trainConnectSpaceLength = extraData.trainSpaceLength,
         trainGroupId = extraData.group,
         enterTrainInstanceArray = {},
         spaceLengthPointer = extraData.trainSpaceLength,
-        levelManager = levelManager
+        levelManager = levelManager,
+        entityList = {}
     }, FinalLinkedRail)
     return self
 end
@@ -44,7 +48,9 @@ function FinalLinkedRail:isFault()
 end
 
 function FinalLinkedRail:destroy()
-
+    for index, entity in ipairs(self.entityList) do
+        api.base.destroyEntity(entity)
+    end
 end
 
 function FinalLinkedRail:forward(enterChannelMask)
@@ -63,7 +69,7 @@ function FinalLinkedRail:onEnter(trainInstance)
     if trainInstance:getGroupId() ~= self.trainGroupId then
         api.setTimeout(function()
             trainInstance:fault()
-            self.levelManager:trainFailedSignal(trainInstance.trainId)
+            self.levelManager:trainFailedSignal(trainInstance)
         end, collisionDelay)
     end
     for sequenceIndex, train in ipairs(self.enterTrainInstanceArray) do

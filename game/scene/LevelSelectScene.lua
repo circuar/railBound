@@ -93,11 +93,10 @@ function LevelSelectScene:registerLevelSelectListener()
         logger:debug("Level select touch. Event data: " .. tostring(data.position))
 
         ---@type Vector3
-        local clickPosition = data.position
-        clickPosition.z = 0
+        local clickPosition = math.Vector3(data.position.x, data.position.y, 0)
+
         -- get gameLoader instance
         -- this is gameScene entry.
-
         local levelMetaDataManager = LevelMetaDataManager.instance()
         local levelMetaDataList = levelMetaDataManager:getLevelMetaDataList()
 

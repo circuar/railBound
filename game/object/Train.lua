@@ -93,6 +93,11 @@ function Train:setPosition(position)
     api.base.setEntityPosition(self.entityList[1], position)
 end
 
+function Train:setGridPosition(row, col)
+    self.currentGridPosition.row = row
+    self.currentGridPosition.col = col
+end
+
 function Train:setVelocity(velocity)
     api.base.setLinearMotorVelocity(self.entityList[1], LINEAR_MOTOR_INDEX, velocity)
 end
@@ -163,6 +168,10 @@ function Train:initForward()
         self.directionMask[PositionDirectionEnum.LEFT]
 
     return { row = nextRow, col = nextCol }
+end
+
+function Train:initForwardLeaveDirection()
+    return self.initDirection
 end
 
 function Train:fault()

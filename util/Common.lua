@@ -1,3 +1,4 @@
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Common = {}
 Common.__index = Common
 
@@ -13,5 +14,16 @@ function Common.ternary(condition, valueIfTrue, valueIfFalse)
         return valueIfFalse
     end
 end
+
+---Reverse position direction enum.
+---@param positionDirection PositionDirectionEnum
+function Common.directionReverse(positionDirection)
+    if positionDirection == PositionDirectionEnum.CENTER then
+        return PositionDirectionEnum.CENTER
+    end
+
+    return (positionDirection - 1 + 2) % 4 + 1
+end
+
 
 return Common

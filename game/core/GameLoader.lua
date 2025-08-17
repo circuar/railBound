@@ -48,6 +48,7 @@ function GameLoader:registerGameEventListener()
         self.cameraManagerRef:setCameraDistance(restrictedDist, 0.3)
     end)
 
+    -- Camera zoom out
     api.base.registerEventListener(Event.EVENT_GAME_CAMERA_ZOOM_OUT, function()
         local cameraDistance = self.cameraManagerRef:getCameraDistance()
         local restrictedDist = math.min(Global.GAME_CAMERA_MAX_DISTANCE, cameraDistance + 10)

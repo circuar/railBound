@@ -77,51 +77,7 @@ local function slideMovableGridUnitRail(grid, row, col, slideDirection)
 
 end
 
-local function calcNextEnterDirection(currentRow, currentCol, nextRow, nextCol)
-    if (currentCol - nextCol) * (currentRow - nextRow) ~= 0 then
-        logger:error("Wrong grid movement direction.")
-        error()
-    end
 
-    if currentRow == nextRow and currentCol == nextCol then
-        return PositionDirectionEnum.CENTER
-    end
-
-    if nextRow - currentRow == 1 then
-        return PositionDirectionEnum.TOP
-    elseif nextRow - currentRow == -1 then
-        return PositionDirectionEnum.BOTTOM
-    elseif nextCol - currentCol == 1 then
-        return PositionDirectionEnum.LEFT
-    else
-        return PositionDirectionEnum.RIGHT
-    end
-end
-
-local function calcNextEnterDirectionMask(currentRow, currentCol, nextRow, nextCol)
-    if (currentCol - nextCol) * (currentRow - nextRow) ~= 0 then
-        logger:error("Wrong grid movement direction.")
-        error()
-    end
-    local directionMask = {}
-    directionMask[1] = Common.ternary(nextRow - currentRow > 0, 1, 0)
-    directionMask[2] = Common.ternary(nextCol - currentCol < 0, 1, 0)
-    directionMask[3] = Common.ternary(nextRow - currentRow < 0, 1, 0)
-    directionMask[4] = Common.ternary(nextCol - currentCol > 0, 1, 0)
-    return directionMask
-end
-
-local function calcGridPositionOffset(row, col, directionMask)
-    if directionMask[1] == 1 then
-        return { row = row - 1, col = col }
-    elseif directionMask[2] == 1 then
-        return { row = row, col = col + 1 }
-    elseif directionMask[3] then
-        return { row = row + 1, col = col }
-    else
-        return { row = row, col = col - 1 }
-    end
-end
 -- constructor =================================================================
 
 
@@ -251,111 +207,120 @@ function LevelManager:unLoadLevel()
 end
 
 function LevelManager:runLevel()
+    if self.levelRunning then
+        logger:error("Level already running, repeated triggering.")
+        error()
+    end
     self.levelRunning = true
 
     local trains = self.levelInstance.trains
-    local rowSize = self.levelInstance.gridRowSize
-    local colSize = self.levelInstance.gridColSize
+
+    for index, train in ipairs(trains) do
+        table.insert(self.trainWaitArray, train)
+    end
+
     local grid = self.levelInstance.grid
 
-    local forwardArray = {}
+    local forward = {}
+    local forwardDirection = {}
 
-    -- Preparation after clicking the start button.
-    --
-    -- At this time, the train is in the starting GridUnit, the train is held by
-    -- the GridUnit and waiting, you need to manually judge whether the next
-    -- gridUnit is blocked, if it is not blocked, cancel the wait, call resume()
-    -- to switch to the normal state and leave the current GridUnit, at this
-    -- time it is ready to enter the GridUnit loop.
-    --
-    -- The judgment of the fault state is also handed over to the subsequent
-    -- loop.
     for index, train in ipairs(trains) do
-        local trainNextGridPos = train:initForward()
-        local trainCurrentGridPos = train:getCurrentGridPosition()
-        table.insert(forwardArray, trainNextGridPos)
-        local nextGridUnit = grid[trainNextGridPos.row][trainNextGridPos.col]
+        -- Get train init next grid position and direction of leave the init
+        -- grid unit.
+        --
+        --   ─┐┌─ ─┐┌─
+        --    ││   ││
+        --   ─┘└─ ─┘└─
+        --   ▲  ▲
+        --   │  │
+        -- init │
+        --     initForward
+        local nextPosition = train:initForward()
+        local initLeaveDirection = train:initForwardLeaveDirection()
 
-        if nextGridUnit == nil or not nextGridUnit:await() then
-            grid[trainCurrentGridPos.row][trainCurrentGridPos.col]:resume()
+        forward[train.trainId] = nextPosition
+        forwardDirection[train.trainId] = initLeaveDirection
+
+        local resumeCondition = (
+            grid[nextPosition.row][nextPosition.col] == nil
+            or not grid[nextPosition.row][nextPosition.col]:await()
+        )
+
+        if resumeCondition then
+            local currentPosition = train:getCurrentGridPosition()
+            local currentRow      = currentPosition.row
+            local currentCol      = currentPosition.col
+            grid[currentRow][currentCol]:resume()
         end
     end
 
-    local gameLoopTimer = FrameTimer.new(Global.GAME_GRID_LOOP_FRAME_COUNT, true)
-    self.gameLoopTimer = gameLoopTimer
+    local loopTimer = FrameTimer.new(Global.GAME_GRID_LOOP_FRAME_COUNT, true)
+    self.gameLoopTimer = loopTimer
 
-    gameLoopTimer:setTask(function()
-        -- Filter out the train instances that need to be performed in this loop.
-        --
-        -- Trains in success, failure, wait state do not enter the loop.
+    loopTimer:setTask(function()
+        ---@type Train[]
         local loopOperationTrains = {}
+
         for index, train in ipairs(trains) do
             local selectCondition = not (
-                Array.contains(self.trainSuccessArray, train)
+                Array.contains(self.trainWaitArray, train)
                 or Array.contains(self.trainFaultArray, train)
-                or Array.contains(self.trainWaitArray, train)
+                or Array.contains(self.trainSuccessArray, train)
             )
-
             if selectCondition then
-                local currentRow = train:getCurrentGridPosition().row
-                local currentCol = train:getCurrentGridPosition().col
-                local nextRow = forwardArray[train.trainId].row
-                local nextCol = forwardArray[train.trainId].col
+                local currentPosition = train:getCurrentGridPosition()
+                local nextPosition = forward[train.trainId]
 
                 local faultCondition = (
-                    nextRow < 1 or nextRow > rowSize
-                    or nextCol < 1 or nextCol > colSize
-                    or grid[nextRow][nextCol] == nil
-                    or grid[nextRow][nextCol]:isFault()
-                    or not grid[nextRow][nextCol]:checkEnterPermit(calcNextEnterDirection(
-                        currentRow,
-                        currentCol,
-                        nextRow,
-                        nextCol
-                    ))
+                    nextPosition.row < 1
+                    or nextPosition.row > self.levelInstance.gridRowSize
+                    or nextPosition.col < 1
+                    or nextPosition.row > self.levelInstance.gridColSize
+                    or grid[nextPosition.row][nextPosition.col] == nil
+                    or grid[nextPosition.row][nextPosition.col]:isFault()
+                    or grid[nextPosition.row][nextPosition.col]:checkEnterPermit(
+                        Common.directionReverse(forwardDirection[train.trainId])
+                    )
                 )
 
-                -- If there will be a fault, the fault logic will be executed at
-                -- this time, and the instance will be added to the fault array, and
-                -- the subsequent logic will not be executed in this loop.
-                --
-                -- TODO check game over
                 if faultCondition then
                     train:fault()
-                    table.insert(self.trainFaultArray, train)
-                    grid[currentRow][currentCol]:fault()
+                    grid[currentPosition.row][currentPosition.col]:fault()
+                    self:trainFailedSignal(train)
                 else
                     table.insert(loopOperationTrains, train)
+                    grid[currentPosition.row][currentPosition.col]:onLeave(train)
                 end
             end
         end
 
         for index, train in ipairs(loopOperationTrains) do
-            local currentRow = train:getCurrentGridPosition().row
-            local currentCol = train:getCurrentGridPosition().col
+            local currentLeaveDirection = forwardDirection[train.trainId]
 
-            local nextRow = forwardArray[train.trainId].row
-            local nextCol = forwardArray[train.trainId].col
-            local nextGridUnit = grid[nextRow][nextCol]
+            local nextPos = forward[train.trainId]
+            local nextGridUnit = grid[nextPos.row][nextPos.col]
+            local nextLeaveDirection = nextGridUnit:forwardDirection(
+                Common.directionReverse(currentLeaveDirection)
+            )
 
-            local forwardPosition = calcGridPositionOffset(nextRow, nextCol,
-                nextGridUnit:forward(calcNextEnterDirectionMask(currentRow, currentCol, nextRow,
-                    nextCol)))
-            local forwardRow = forwardPosition.row
-            local forwardCol = forwardPosition.col
+            local forwardPos = nextGridUnit:forward(
+                Common.directionReverse(currentLeaveDirection)
+            )
+            local forwardGridUnit = grid[forwardPos.row][forwardPos.col]
 
-            forwardArray[train.trainId] = { row = forwardRow, col = forwardCol }
+            forwardDirection[train.trainId] = nextLeaveDirection
+            forward[train.trainId] = forwardPos
 
-
-            if grid[forwardRow][forwardCol]:await() then
+            if forwardGridUnit ~= nil and forwardGridUnit:await() then
                 nextGridUnit:wait(train)
             else
                 nextGridUnit:onEnter(train)
             end
         end
     end)
+
     api.setTimeout(function()
-        gameLoopTimer:run()
+        loopTimer:run()
     end, Train.getInitForwardDuration())
 end
 
@@ -370,6 +335,18 @@ function LevelManager:trainGroupSuccessSignal(groupId)
 
 end
 
+---comment
+---@param waitTrainInstance Train
+function LevelManager:trainWaitSignal(waitTrainInstance)
+    table.insert(self.trainWaitArray, waitTrainInstance)
+end
+
+---
+---@param resumeTrainIdInstance Train
+function LevelManager:trainResumeSignal(resumeTrainIdInstance)
+    Array.removeElement(self.trainWaitArray, resumeTrainIdInstance)
+end
+
 --- Called when the carriage enters the terminal GridUnit and will be
 --- successfully connected.
 ---
@@ -381,9 +358,12 @@ end
 --- This is designed so that the cycle timer can stop as early as possible.
 --- Avoid players operating between two timer loops, causing data changes in the
 --- grid and causing the timer to stop properly.
----@param successTrainId integer
-function LevelManager:trainSuccessSignal(successTrainId)
-    table.insert(self.trainFaultArray, self.levelInstance.trains[successTrainId])
+---@param successTrainInstance Train
+function LevelManager:trainSuccessSignal(successTrainInstance)
+    table.insert(self.trainFaultArray, self.levelInstance.trains[successTrainInstance])
+    if #self.trainSuccessArray == #self.levelInstance.trains then
+        -- GameUI.hide
+    end
 end
 
 --- It is called when the train breaks down, including collisions, incorrect
@@ -391,9 +371,9 @@ end
 ---
 --- This function is called at the same time as
 --- trainSuccessSignal(successTrainId).
----@param failedTrainId integer
-function LevelManager:trainFailedSignal(failedTrainId)
-    table.insert(self.trainFaultArray, self.levelInstance.trains[failedTrainId])
+---@param failedTrainInstance Train
+function LevelManager:trainFailedSignal(failedTrainInstance)
+    table.insert(self.trainFaultArray, self.levelInstance.trains[failedTrainInstance])
 end
 
 ---@param position Vector3
