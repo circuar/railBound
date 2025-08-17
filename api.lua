@@ -62,8 +62,7 @@ end
 ---@param event string
 ---@param data table?
 function base.sendUIEvent(player, event, data)
-    ---@diagnostic disable-next-line: param-type-mismatch
-    player.send_ui_custom_event(event, data)
+    player.send_ui_custom_event(event, data or {})
 end
 
 ---register custom event listener
@@ -262,6 +261,14 @@ end
 ---@return any archiveData
 function base.getArchiveData(player, index, dataType)
     return player.get_archive_by_type(dataType, index)
+end
+
+---Set player UI node text
+---@param player Role
+---@param nodeId string
+---@param text string
+function base.setUIText(player, nodeId, text)
+    player.set_label_text(nodeId, text)
 end
 
 api.base = base

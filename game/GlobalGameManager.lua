@@ -17,7 +17,7 @@ local function init()
     -- do some initialize work here
 
     -- register exit game event
-    api.base.registerEventListener(Event.EVENT_EXIT_GAME, GlobalGameManager.exit)
+    api.base.registerEventListener(Event.EVENT_EXIT, GlobalGameManager.exit)
 
     -- initialize sceneDispatcher
     local sceneDispatcher = SceneDispatcher.instance()

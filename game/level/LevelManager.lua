@@ -13,6 +13,7 @@ local Train                 = require "game.object.Train"
 local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Common                = require "util.Common"
 local FrameTimer            = require "game.core.FrameTimer"
+local LevelMetaDataManager  = require "game.level.LevelMetaDataManager"
 
 
 ---@class LevelManager
@@ -183,11 +184,13 @@ function LevelManager:hideCursor()
     end
 end
 
-function LevelManager:loadLevel(level)
+--- Load level by levelIndex.
+---@param levelIndex integer
+function LevelManager:loadLevel(levelIndex)
     if self.levelFactory == nil then
         logger:error("level factory not set")
     end
-    local levelInstance = self.levelFactory:getInstance(level)
+    local levelInstance = self.levelFactory:getInstance(levelIndex)
 
     self.levelInstance = levelInstance
     self.currentLevelGridSize = { row = levelInstance.gridRowSize, col = levelInstance.gridColSize }
@@ -197,6 +200,9 @@ function LevelManager:loadLevel(level)
     levelInstance:setLevelCamera()
     levelInstance:renderGridLine()
     levelInstance:renderSceneBackground()
+
+    GameUI.setGameUIRailCount(self.levelInstance.remainRailCount)
+    GameUI.setGameUILevelName(LevelMetaDataManager.instance():getLevelLabel(levelIndex))
 end
 
 function LevelManager:playCusSceneIn()
@@ -254,6 +260,16 @@ function LevelManager:runLevel()
 
     local forwardArray = {}
 
+    -- Preparation after clicking the start button.
+    --
+    -- At this time, the train is in the starting GridUnit, the train is held by
+    -- the GridUnit and waiting, you need to manually judge whether the next
+    -- gridUnit is blocked, if it is not blocked, cancel the wait, call resume()
+    -- to switch to the normal state and leave the current GridUnit, at this
+    -- time it is ready to enter the GridUnit loop.
+    --
+    -- The judgment of the fault state is also handed over to the subsequent
+    -- loop.
     for index, train in ipairs(trains) do
         local trainNextGridPos = train:initForward()
         local trainCurrentGridPos = train:getCurrentGridPosition()
@@ -265,12 +281,13 @@ function LevelManager:runLevel()
         end
     end
 
-
-    local operationTrainArray = {}
     local gameLoopTimer = FrameTimer.new(Global.GAME_GRID_LOOP_FRAME_COUNT, true)
     self.gameLoopTimer = gameLoopTimer
 
     gameLoopTimer:setTask(function()
+        -- Filter out the train instances that need to be performed in this loop.
+        --
+        -- Trains in success, failure, wait state do not enter the loop.
         local loopOperationTrains = {}
         for index, train in ipairs(trains) do
             local selectCondition = not (
@@ -278,6 +295,7 @@ function LevelManager:runLevel()
                 or Array.contains(self.trainFaultArray, train)
                 or Array.contains(self.trainWaitArray, train)
             )
+
             if selectCondition then
                 local currentRow = train:getCurrentGridPosition().row
                 local currentCol = train:getCurrentGridPosition().col
@@ -297,6 +315,11 @@ function LevelManager:runLevel()
                     ))
                 )
 
+                -- If there will be a fault, the fault logic will be executed at
+                -- this time, and the instance will be added to the fault array, and
+                -- the subsequent logic will not be executed in this loop.
+                --
+                -- TODO check game over
                 if faultCondition then
                     train:fault()
                     table.insert(self.trainFaultArray, train)
@@ -334,12 +357,6 @@ function LevelManager:runLevel()
     api.setTimeout(function()
         gameLoopTimer:run()
     end, Train.getInitForwardDuration())
-end
-
-function LevelManager:nextLevel()
-    for index, finalLinkedGridUnit in ipairs(self.levelInstance.finalLinkedGridUnits) do
-        finalLinkedGridUnit:launch()
-    end
 end
 
 -- callback method =============================================================

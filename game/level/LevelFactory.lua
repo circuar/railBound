@@ -12,12 +12,11 @@ function LevelFactory.new(levelLoader)
 end
 
 ---
----@param levelId any
+---@param levelId integer
 ---@return Level
 function LevelFactory:getInstance(levelId)
     local levelInfo = self.levelLoader:getLevelInfo(levelId)
     return Level.new(levelInfo)
 end
-
 
 return LevelFactory

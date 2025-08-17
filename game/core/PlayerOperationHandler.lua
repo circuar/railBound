@@ -36,11 +36,11 @@ function PlayerOperationHandler:proxy(levelManager)
 end
 
 function PlayerOperationHandler:registerHandlers()
-    api.base.registerEventListener(Event.EVENT_GAME_OPERATION_TOUCH, function(data)
+    api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_TOUCH, function(name, unit, data)
         self.touchPosition = data.position
         self.touchStatus = true
     end)
-    api.base.registerEventListener(Event.EVENT_GAME_OPERATION_TOUCH_RELEASE, function()
+    api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_TOUCH_RELEASE, function(name, unit, data)
         self.touchStatus = false
     end)
 
@@ -55,7 +55,7 @@ function PlayerOperationHandler:registerHandlers()
               |
     y+:
     --]]
-    api.base.registerEventListener(Event.EVENT_GAME_OPERATION_SLIDE, function(data)
+    api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_SLIDE, function(name, unit, data)
         local angle = data.angle
         if angle > 45 and angle <= 135 then
 

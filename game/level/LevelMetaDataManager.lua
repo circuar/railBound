@@ -64,4 +64,8 @@ function LevelMetaDataManager:getLevelMetaDataList()
     return self.levelMetaData
 end
 
+function LevelMetaDataManager:getLevelLabel(levelIndex)
+    return self.levelMetaData[levelIndex].levelLabel
+end
+
 return LevelMetaDataManager

@@ -2,6 +2,8 @@
 
 return {
 	btmBar = "1519736575|1181549700" --[[@as EImage]],
+	cameraZoomIn = "1519736575|1017063467" --[[@as ELabel]],
+	cameraZoomOut = "1519736575|1793406580" --[[@as ELabel]],
 	cancel = "1519736575|1165322009" --[[@as ELabel]],
 	cutScene = "1519736575|1638436905" --[[@as EImage]],
 	cutSceneMask = "1519736575|1905795321" --[[@as ELabel]],

@@ -30,6 +30,7 @@ function GameUI.showLevelSelectUI()
 end
 
 function GameUI.hideLevelSelectUI()
+    logger:debug("Send hide level select ui event")
     api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_HIDE_LEVEL_SELECT_UI)
 end
 
@@ -64,11 +65,15 @@ function GameUI.hideGameSceneUI()
 end
 
 function GameUI.setGameUILevelName(levelName)
-
+    local player = api.getSinglePlayer()
+    logger:debug("Set level name label text. Level name: " .. levelName)
+    api.base.setUIText(player, UIResource.GAME_LEVEL_NAME_LABEL, levelName)
 end
 
 function GameUI.setGameUIRailCount(num)
-
+    local player = api.getSinglePlayer()
+    logger:debug("Set rail count text. Rail count: " .. num)
+    api.base.setUIText(player, UIResource.GAME_RAIL_COUNT, tostring(num))
 end
 
 function GameUI.setGameUIRunBtnStatus(status)
@@ -87,11 +92,17 @@ function GameUI.showLevelSwitchAnim(loadInterval)
 end
 
 function GameUI.showLevelSwitchAnimIn()
-    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_ANIM_IN)
+    local player = api.getSinglePlayer()
+    api.base.sendUIEvent(player, Event.UI_SHOW_LEVEL_SWITCH_SCENE)
+    api.base.sendUIEvent(player, Event.UI_PLAY_LEVEL_SWITCH_ANIM_IN)
 end
 
 function GameUI.showLevelSwitchAnimOut()
-    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_PLAY_LEVEL_SWITCH_ANIM_OUT)
+    local player = api.getSinglePlayer()
+    api.base.sendUIEvent(player, Event.UI_PLAY_LEVEL_SWITCH_ANIM_OUT)
+    api.setTimeout(function()
+        api.base.sendUIEvent(player, Event.UI_HIDE_LEVEL_SWITCH_SCENE)
+    end, Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
 end
 
 function GameUI.showDeleteUIBorder()

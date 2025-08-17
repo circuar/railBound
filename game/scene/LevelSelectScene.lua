@@ -125,6 +125,7 @@ end
 
 -- override
 function LevelSelectScene:onExit()
+    logger:debug("LevelSelectScene on exit.")
     GameUI.hideLevelSelectUI()
 end
 
