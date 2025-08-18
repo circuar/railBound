@@ -6,6 +6,7 @@ local Array                 = require "util.Array"
 
 ---@class FinalLinkedRail:GridUnit
 ---@field directionMask integer[]
+---@field gridPosition table
 ---@field position Vector3
 ---@field finalLinkedData table
 ---@field trainConnectSpaceLength number
@@ -19,9 +20,10 @@ FinalLinkedRail.__index = FinalLinkedRail
 
 local logger            = Logger.new("FinalLinkedRail")
 
-function FinalLinkedRail.new(directionMask, chiralityMask, position, extraData, levelManager)
+function FinalLinkedRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
     local self = setmetatable({
         directionMask = Array.copy(directionMask),
+        gridPosition = { gridPosition.row, gridPosition.col },
         position = position,
         finalLinkedData = extraData,
         trainConnectSpaceLength = extraData.trainSpaceLength,

@@ -26,6 +26,7 @@ local Train             = require "game.object.Train"
 ---@field gridPositionMap Vector3[][]
 ---@field trainData table[]
 ---@field trains Train[]
+---@field trainGroupCount integer
 ---@field finalLinkedGridUnits FinalLinkedRail[]
 ---@field gridLineEntityList Unit[]
 local Level             = {}
@@ -61,6 +62,7 @@ local function initObjectField(levelInfo)
         gridPositionMap = {},
         trainData = levelInfo.levelData.trainData,
         trains = {},
+        trainGroupCount = levelInfo.levelData.groupChannelCount,
         finalLinkedGridUnits = {},
 
         gridLineEntityList = {},
@@ -84,6 +86,9 @@ local function initObjectField(levelInfo)
                     colElemData.extraData
                 )
                 self.grid[rowIndex][colIndex] = gridUnitInstance
+
+                gridUnitInstance:render()
+
                 if colElemData.gridUnitType == GridUnitClassEnum.RAIL_FINAL then
                     table.insert(self.finalLinkedGridUnits, gridUnitInstance)
                 end

@@ -14,6 +14,7 @@ local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Common                = require "util.Common"
 local FrameTimer            = require "game.core.FrameTimer"
 local LevelMetaDataManager  = require "game.level.LevelMetaDataManager"
+local GameUIRunBtnStatusEnum= require "common.enum.GameUIRunBtnStatusEnum"
 
 
 ---@class LevelManager
@@ -243,7 +244,7 @@ function LevelManager:runLevel()
 
         local resumeCondition = (
             grid[nextPosition.row][nextPosition.col] == nil
-            or not grid[nextPosition.row][nextPosition.col]:await()
+            or not grid[nextPosition.row][nextPosition.col]:isBlocking()
         )
 
         if resumeCondition then
@@ -285,7 +286,7 @@ function LevelManager:runLevel()
 
                 if faultCondition then
                     train:fault()
-                    grid[currentPosition.row][currentPosition.col]:fault()
+                    grid[currentPosition.row][currentPosition.col]:setFault()
                     self:trainFailedSignal(train)
                 else
                     table.insert(loopOperationTrains, train)
@@ -311,7 +312,7 @@ function LevelManager:runLevel()
             forwardDirection[train.trainId] = nextLeaveDirection
             forward[train.trainId] = forwardPos
 
-            if forwardGridUnit ~= nil and forwardGridUnit:await() then
+            if forwardGridUnit ~= nil and forwardGridUnit:isBlocking() then
                 nextGridUnit:wait(train)
             else
                 nextGridUnit:onEnter(train)
@@ -332,7 +333,12 @@ end
 --- This function call must have a delay compared to the last taskLoop.
 --- @param groupId integer
 function LevelManager:trainGroupSuccessSignal(groupId)
-
+    table.insert(self.trainGroupSuccessArray, groupId)
+    if self.levelInstance.trainGroupCount == #self.trainGroupSuccessArray then
+        for index, finalRail in ipairs(self.levelInstance.finalLinkedGridUnits) do
+            finalRail:launch()
+        end
+    end
 end
 
 ---comment
@@ -363,6 +369,8 @@ function LevelManager:trainSuccessSignal(successTrainInstance)
     table.insert(self.trainFaultArray, self.levelInstance.trains[successTrainInstance])
     if #self.trainSuccessArray == #self.levelInstance.trains then
         -- GameUI.hide
+        GameUI.hideGameSceneUI()
+        self.gameLoopTimer:stop()
     end
 end
 
@@ -374,6 +382,10 @@ end
 ---@param failedTrainInstance Train
 function LevelManager:trainFailedSignal(failedTrainInstance)
     table.insert(self.trainFaultArray, self.levelInstance.trains[failedTrainInstance])
+    if #self.trainFaultArray == #self.levelInstance.trains then
+        GameUI.setGameUIRunBtnStatus(GameUIRunBtnStatusEnum.FAILURE)
+        self.gameLoopTimer:stop()
+    end
 end
 
 ---@param position Vector3
@@ -392,24 +404,47 @@ function LevelManager:click(position)
         self.effectiveClick = false
         return
     end
+
     self.effectiveClick = true
     self.clickPosition = position
     self.clickGrid = { row = clickRow, col = clickCol }
-    logger:info("player click operation, click: row = " .. clickRow ..
+
+    logger:debug("Player click operation, click: row = " .. clickRow ..
         ", col = " .. clickCol)
+
+    local grid = self.levelInstance.grid
+
+    if grid[clickRow][clickRow] ~= nil and grid[clickRow][clickRow]:isFixed() then
+        logger:debug("Click grid unit is fixed, skipped.")
+        return
+    end
+
+    ---@type MovableRail
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    local targetGridUnit = grid[clickRow][clickRow]
 
     if self.deleteMode then
         -- create cursor
         self:changeCursor(clickRow, clickCol, CursorStatusEnum.DELETE)
-        -- delete grid unit logic
+
+        -- delete grid unit
+        if targetGridUnit ~= nil then
+            targetGridUnit:destroy()
+            grid[clickRow][clickCol] = nil
+        end
     else
-        local clickGridUnitRef = self.levelInstance.grid[clickRow][clickCol]
-        if clickGridUnitRef == nil then
+        -- create cursor
+        self:changeCursor(clickRow, clickCol, CursorStatusEnum.CREATE)
+        if targetGridUnit == nil then
             --create logic
-            self:changeCursor(clickRow, clickCol, CursorStatusEnum.CREATE)
         else
+            targetGridUnit:mirror()
         end
     end
+end
+
+function LevelManager:undo()
+
 end
 
 function LevelManager:slide(angle)
@@ -422,6 +457,7 @@ function LevelManager:cancelClick()
     if self.effectiveClick == false then
         return
     end
+    self.effectiveClick = false
     self:hideCursor()
 end
 

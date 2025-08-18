@@ -1,11 +1,10 @@
 local Logger                   = require "logger.Logger"
 local api                      = require "api"
 local Event                    = require "common.Event"
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 
 ---@class PlayerOperationHandler
 ---@field levelManager LevelManager
----@field touchStatus boolean
----@field touchPosition Vector3
 local PlayerOperationHandler   = {}
 PlayerOperationHandler.__index = PlayerOperationHandler
 
@@ -16,8 +15,6 @@ local instance                 = nil
 local function constructor()
     local self = setmetatable({
         levelManager = nil,
-        touchStatus = false,
-        touchPosition = math.Vector3(0, 0, 0),
     }, PlayerOperationHandler)
     self:registerHandlers()
     return self
@@ -37,11 +34,10 @@ end
 
 function PlayerOperationHandler:registerHandlers()
     api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_TOUCH, function(name, unit, data)
-        self.touchPosition = data.position
-        self.touchStatus = true
+        self.levelManager:click(data.position)
     end)
     api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_TOUCH_RELEASE, function(name, unit, data)
-        self.touchStatus = false
+        self.levelManager:cancelClick()
     end)
 
     --[[
@@ -57,14 +53,14 @@ function PlayerOperationHandler:registerHandlers()
     --]]
     api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_SLIDE, function(name, unit, data)
         local angle = data.angle
-        if angle > 45 and angle <= 135 then
-
-        elseif angle > 135 and angle <= 225 then
-
-        elseif angle > 225 and angle <= 315 then
-
+        if angle > 30 and angle <= 120 then
+            self.levelManager:slide(PositionDirectionEnum.TOP)
+        elseif angle > 120 and angle <= 210 then
+            self.levelManager:slide(PositionDirectionEnum.LEFT)
+        elseif angle > 210 and angle <= 300 then
+            self.levelManager:slide(PositionDirectionEnum.BOTTOM)
         else
-
+            self.levelManager:slide(PositionDirectionEnum.RIGHT)
         end
     end)
 end
