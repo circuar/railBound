@@ -237,7 +237,7 @@ function LevelManager:runLevel()
         -- init │
         --     initForward
         local nextPosition = train:initForward()
-        local initLeaveDirection = train:initForwardLeaveDirection()
+        local initLeaveDirection = train:initForwardDirection()
 
         forward[train.trainId] = nextPosition
         forwardDirection[train.trainId] = initLeaveDirection
@@ -248,7 +248,7 @@ function LevelManager:runLevel()
         )
 
         if resumeCondition then
-            local currentPosition = train:getCurrentGridPosition()
+            local currentPosition = train:getGridPosition()
             local currentRow      = currentPosition.row
             local currentCol      = currentPosition.col
             grid[currentRow][currentCol]:resume()

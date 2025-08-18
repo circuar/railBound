@@ -64,7 +64,6 @@ function FixedNormalRail:forward(enterDirection)
     return Common.gridPositionMove(self.gridPosition.row, self.gridPosition.col, self:forwardDirection(enterDirection))
 end
 
----
 ---@param enterDirection PositionDirectionEnum
 ---@return PositionDirectionEnum
 function FixedNormalRail:forwardDirection(enterDirection)
@@ -112,6 +111,26 @@ end
 function FixedNormalRail:isFault()
     return self.fault
 end
+
+function FixedNormalRail:isFixed()
+    return true
+end
+
+function FixedNormalRail:launch()
+    logger:error("This method should not be called in this class, please check the configuration file or level logic.")
+    error()
+end
+
+function FixedNormalRail:mirror()
+    logger:error("This method should not be called in this class, please check the configuration file or level logic.")
+    error()
+end
+
+function FixedNormalRail:onEnter(trainInstance)
+    
+end
+
+
 
 
 return FixedNormalRail

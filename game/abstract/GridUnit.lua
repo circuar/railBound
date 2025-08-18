@@ -11,7 +11,7 @@ GridUnit.__index = GridUnit
 --- before calling this method.
 ---@param enterDirection PositionDirectionEnum
 ---@return table
-function GridUnit:forward(enterDirection) return {row = nil, col = nil} end
+function GridUnit:forward(enterDirection) return { row = nil, col = nil } end
 
 --- Obtain the direction in which the train leaves the GridUnit when entering
 --- from a specified direction under the current conditions.
@@ -55,5 +55,9 @@ function GridUnit:isFixed() end
 function GridUnit:isFault() end
 
 function GridUnit:setFault() end
+
+function GridUnit:mirror() end
+
+function GridUnit:launch() end
 
 return GridUnit

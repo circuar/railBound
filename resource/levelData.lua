@@ -25,9 +25,9 @@ return {
                 {
                     trainId = 1,
                     sequenceId = 1,
-                    trainType = "normal",
+                    trainType = "NORMAL",
                     trainGroup = 1,
-                    position = { row = 1, col = 1 },
+                    gridPosition = { row = 1, col = 1 },
                     directionMask = { 0, 1, 0, 0 }
                 }
             },

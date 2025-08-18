@@ -223,13 +223,14 @@ function base.setRotation(entity, rotation)
     entity.set_orientation(rotation)
 end
 
----set linear motor velocity
+---Set linear motor velocity.
+---This function will automatically enable the corresponding motor when called.
 ---@param entity Unit
 ---@param motorIndex integer
 ---@param velocity Vector3
 ---@param localCoordinate boolean?
 function base.setLinearMotorVelocity(entity, motorIndex, velocity, localCoordinate)
-    entity.set_linear_motor_velocity(motorIndex, velocity, localCoordinate)
+    entity.set_linear_motor_velocity(motorIndex, velocity, localCoordinate or false)
 end
 
 ---get entity position
@@ -269,6 +270,20 @@ end
 ---@param text string
 function base.setUIText(player, nodeId, text)
     player.set_label_text(nodeId, text)
+end
+
+---Enable specify entity motor by index.
+---@param entity Obstacle
+---@param index integer
+function base.enableLinearMotor(entity, index)
+    entity.enable_motor(index)
+end
+
+---Disable specify entity motor by index.
+---@param entity Obstacle
+---@param index integer
+function base.disableLinearMotor(entity, index)
+    entity.disable_motor(index)
 end
 
 api.base = base
