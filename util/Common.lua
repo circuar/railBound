@@ -32,17 +32,30 @@ end
 ---@return table
 function Common.gridPositionMove(row, col, direction)
     if direction == PositionDirectionEnum.TOP then
-        return {row = row -1 , col = col}
+        return { row = row - 1, col = col }
     elseif direction == PositionDirectionEnum.RIGHT then
-        return {row = row, col = col + 1}
+        return { row = row, col = col + 1 }
     elseif direction == PositionDirectionEnum.BOTTOM then
-        return {row = row + 1, col = col}
+        return { row = row + 1, col = col }
     elseif direction == PositionDirectionEnum.LEFT then
-        return {row = row, col = col - 1}
+        return { row = row, col = col - 1 }
     else
-        return {row = row, col = col}
+        return { row = row, col = col }
     end
 end
 
+---Convert position direction enum to vector.
+---@param direction any
+function Common.directionToVector(direction)
+    if direction == PositionDirectionEnum.TOP then
+        return math.Vector3(0, 0, 1)
+    elseif direction == PositionDirectionEnum.RIGHT then
+        return math.Vector3(1, 0, 0)
+    elseif direction == PositionDirectionEnum.BOTTOM then
+        return math.Vector3(0, 0, -1)
+    else
+        return math.Vector3(-1, 0, 0)
+    end
+end
 
 return Common
