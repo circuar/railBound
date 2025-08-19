@@ -1,12 +1,16 @@
-local Array                            = require "util.Array"
-local api                              = require "api"
-local Common                           = require "util.Common"
-local Global                           = require "common.Global"
-local PositionDirectionEnum            = require "common.enum.PositionDirectionEnum"
+local Array                 = require "util.Array"
+local api                   = require "api"
+local Common                = require "util.Common"
+local Global                = require "common.Global"
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
+local Logger                = require "logger.Logger"
+local GameResource          = require "common.GameResource"
+
 
 ---@class Train
 ---@field private initTrainData table
 ---@field private initPosition Vector3
+---@field private initDirection PositionDirectionEnum
 ---@field private trainId integer
 ---@field private sequenceId integer
 ---@field private trainType string
@@ -16,20 +20,31 @@ local PositionDirectionEnum            = require "common.enum.PositionDirectionE
 ---@field private direction PositionDirectionEnum
 ---@field private intermediate boolean
 ---@field private entities table
-local Train                            = {}
-Train.__index                          = Train
+local Train   = {}
+Train.__index = Train
+
+local logger  = Logger.new("Train")
+
 
 local TRAIN_SPEED                      = Global.GAME_GRID_SIZE /
     (Global.GAME_GRID_LOOP_FRAME_COUNT * Global.LOGIC_FRAME_INTERVAL)
 local SURROUND_CENTER_ENTITY_PRESET_ID = 1
+
+
+
 function Train.getTrainSpeed()
     return TRAIN_SPEED
 end
 
 function Train.new(trainData, initPosition)
+    local initDirection = Array.find(trainData.directionMask, 1)
+
+
     local self = setmetatable({
         initTrainData = trainData,
         initPosition = initPosition,
+
+        initDirection = initDirection,
 
         trainId = trainData.trainId,
         sequenceId = trainData.sequenceId,
@@ -40,7 +55,7 @@ function Train.new(trainData, initPosition)
             col = trainData.gridPosition.col,
         },
         directionMask = Array.copy(trainData.directionMask),
-        direction = Array.find(trainData.directionMask, 1),
+        direction = initDirection,
         intermediate = false,
         entities = {}
     }, Train)
@@ -84,6 +99,11 @@ end
 ---@param towards PositionDirectionEnum
 ---@param gridPos table
 function Train:straight(referencePos, towards, gridPos)
+    if self.intermediate then
+        logger:error(
+            "If the current train instance is in the intermediate state, exit the intermediate state before calling the current method.")
+        error()
+    end
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -128,12 +148,19 @@ end
 ---@param swerveMask integer
 ---@param gridPos table
 function Train:swerve(referencePos, centerPos, initialTowards, swerveMask, gridPos)
+    if self.intermediate then
+        logger:error(
+            "If the current train instance is in the intermediate state, exit the intermediate state before calling the current method.")
+        error()
+    end
+
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
 
     self.gridPosition.row = gridPos.row
     self.gridPosition.col = gridPos.col
+    self.direction = Common.ternary(swerveMask == 0, (initialTowards - 1 - 1) % 4 + 1, (initialTowards - 1 + 1) % 4 + 1)
 
     local centerEntity = api.base.createEntity(
         SURROUND_CENTER_ENTITY_PRESET_ID,
@@ -159,10 +186,41 @@ function Train:swerve(referencePos, centerPos, initialTowards, swerveMask, gridP
     end, 1.0)
 end
 
-
-
 function Train:intermediateSwerve(referencePos, centerPos, initialTowards, swerveMask, gridPos)
+    local trainBaseEntity = self.entities.base
 
+    local centerEntity = api.base.createEntity(
+        SURROUND_CENTER_ENTITY_PRESET_ID,
+        centerPos,
+        math.Quaternion(0, 0, 0),
+        math.Vector3(1, 1, 1)
+    )
+
+
+    if self.intermediate then
+        api.base.setEntityPosition(trainBaseEntity, referencePos)
+
+        local rotationY = (1 - initialTowards) * math.pi / 2
+        api.base.setRotation(trainBaseEntity, math.Quaternion(0, rotationY, 0))
+
+        self.gridPosition.row = gridPos.row
+        self.gridPosition.col = gridPos.col
+        self.direction = Common.ternary(swerveMask == 0, (initialTowards - 1 - 1) % 4 + 1,
+            (initialTowards - 1 + 1) % 4 + 1)
+    end
+
+    local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT / 2
+    local angularSpeed = math.pi / 2 / duration
+    if swerveMask == 1 then
+        angularSpeed = -angularSpeed
+    end
+    local angularVelocity = math.Vector3(0, angularSpeed, 0)
+
+    api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
+
+    api.setTimeout(function()
+        api.base.destroyEntity(centerEntity)
+    end, 1.0)
 end
 
 function Train:initForward()
@@ -172,7 +230,29 @@ function Train:initForward()
 end
 
 function Train:initForwardDirection()
-    return self.initTrainData.direction
+    return self.initDirection
+end
+
+function Train:render()
+    local rotationY = (self:initForwardDirection() - 1) * math.pi / 2
+    local entityGroup = api.base.createEntityGroup(
+        GameResource.TRAIN_MODEL_GROUP_PRESET_ID,
+        self.initPosition,
+        math.Quaternion(0, rotationY, 0)
+    )
+
+    self.entities.base = api.base.getChildEntityList(entityGroup)[1]
+end
+
+function Train:destroy()
+    for key, entity in pairs(self.entities) do
+        api.base.destroyEntity(entity)
+    end
+end
+
+function Train:reset()
+    self:destroy()
+    self:render()
 end
 
 return Train

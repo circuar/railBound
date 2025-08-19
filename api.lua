@@ -286,5 +286,22 @@ function base.disableLinearMotor(entity, index)
     entity.disable_motor(index)
 end
 
+---Create entity group.
+---@param entityGroupId integer
+---@param position Vector3
+---@param rotation Quaternion
+---@param player Role?
+---@return UnitGroup
+function base.createEntityGroup(entityGroupId, position, rotation, player)
+    return GameAPI.create_unit_group(entityGroupId, position, rotation, player)
+end
+
+---Get child entity list of specific entity.
+---@param entity Unit
+---@return Unit[]
+function base.getChildEntityList(entity)
+    return entity.get_children()
+end
+
 api.base = base
 return api
