@@ -15,6 +15,8 @@ local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 ---@field private associatedEntities Unit[]
 ---@field private blocking boolean
 ---@field private fault boolean
+---@field private trainList Train[]
+---@field private trainForwardData table[]
 local FixedNormalRail   = {}
 FixedNormalRail.__index = FixedNormalRail
 
@@ -39,7 +41,9 @@ function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, positio
         levelManager = levelManager,
         associatedEntities = {},
         blocking = false,
-        fault = false
+        fault = false,
+        trainList = {},
+        trainForwardData = {}
     }, FixedNormalRail)
 
     return self
@@ -116,6 +120,10 @@ function FixedNormalRail:isFixed()
     return true
 end
 
+function FixedNormalRail:isBusy()
+    return #self.trainList > 0
+end
+
 function FixedNormalRail:launch()
     logger:error("This method should not be called in this class, please check the configuration file or level logic.")
     error()
@@ -126,12 +134,23 @@ function FixedNormalRail:mirror()
     error()
 end
 
-function FixedNormalRail:onEnter(trainInstance)
-    if self.fault then
-        
-    end
+function FixedNormalRail:onEnter(trainInstance, enterDirection)
+    table.insert(self.trainList, trainInstance)
+    local forwardData = {
+        enterDirection = enterDirection,
+        leaveDirection = self:forwardDirection(enterDirection),
+        wait = false
+    }
+    table.insert(self.trainForwardData, forwardData)
 end
 
+function FixedNormalRail:wait(trainInstance, enterDirection)
+    table.insert(self.trainList, trainInstance)
+    local forwardData = {
+        enterDirection = enterDirection,
+        wait = true
+    }
+end
 
 
 

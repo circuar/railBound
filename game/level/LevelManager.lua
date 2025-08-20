@@ -214,6 +214,8 @@ end
 ---@param gridSize table
 ---@param train Train
 ---@param forward table
+---@param forwardDirection table
+---@param cache Train[]
 local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirection, cache)
     if Array.contains(cache, train) then
         return false
@@ -315,7 +317,7 @@ function LevelManager:runLevel()
                     col = self.levelInstance.gridColSize,
                 }
 
-                if checkTrainWillFault(self.levelInstance.grid, gridSize, train, forward, forwardDirection) then
+                if checkTrainWillFault(self.levelInstance.grid, gridSize, train, forward, forwardDirection, {}) then
                     train:fault()
                     grid[currentPosition.row][currentPosition.col]:setFault()
                     self:trainFailedSignal(train)
@@ -325,6 +327,9 @@ function LevelManager:runLevel()
                 end
             end
         end
+
+        ---@type GridUnit[]
+        local updateGridUnitList = {}
 
         for index, train in ipairs(loopOperationTrains) do
             local trainId = train:getTrainId()
@@ -346,9 +351,21 @@ function LevelManager:runLevel()
 
             if forwardGridUnit ~= nil and forwardGridUnit:isBlocking() then
                 nextGridUnit:wait(train)
+
+                if not Array.contains(updateGridUnitList, nextGridUnit) then
+                    table.insert(updateGridUnitList, nextGridUnit)
+                end
             else
                 nextGridUnit:onEnter(train)
+
+                if not Array.contains(updateGridUnitList, nextGridUnit) then
+                    table.insert(updateGridUnitList, nextGridUnit)
+                end
             end
+        end
+
+        for i, gridUnit in ipairs(updateGridUnitList) do
+            gridUnit:update()
         end
     end)
 
@@ -356,6 +373,9 @@ function LevelManager:runLevel()
         loopTimer:run()
     end, Train.getInitForwardDuration())
 end
+
+
+
 
 -- callback method =============================================================
 

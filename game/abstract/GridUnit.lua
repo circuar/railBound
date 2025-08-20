@@ -36,7 +36,7 @@ function GridUnit:destroy() end
 ---
 ---this function can change grid unit status.
 ---@param trainInstance Train
-function GridUnit:onEnter(trainInstance) end
+function GridUnit:onEnter(trainInstance, enterDirection) end
 
 --- Corresponding trigger when leaving.
 ---@param trainInstance Train
@@ -51,7 +51,7 @@ function GridUnit:isBusy() end
 ---@return Train
 function GridUnit:getSingleHoldingTrain() return Train end
 
-function GridUnit:wait(trainInstance) end
+function GridUnit:wait(trainInstance, enterDirection) end
 
 function GridUnit:resume(trainInstance) end
 
@@ -67,5 +67,9 @@ function GridUnit:setFault() end
 function GridUnit:mirror() end
 
 function GridUnit:launch() end
+
+function GridUnit:update()
+    
+end
 
 return GridUnit
