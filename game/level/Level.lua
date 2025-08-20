@@ -79,16 +79,20 @@ local function initObjectField(levelInfo)
         self.gridPositionMap[rowIndex] = {}
 
         for colIndex, colElemData in ipairs(row) do
-            local gridUnitPosition = calcUnitPosition(rowIndex, colIndex, self.gridRowSize, self.gridColSize)
-            self.gridPositionMap[rowIndex][colIndex] = gridUnitPosition
+            local position = calcUnitPosition(rowIndex, colIndex, self.gridRowSize, self.gridColSize)
+            self.gridPositionMap[rowIndex][colIndex] = position
+
+            print(position)
 
             if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
                 local gridUnitInstance = GridUnitFactory.getInstance(
                     colElemData.gridUnitType,
                     colElemData.directionMask,
                     colElemData.chiralityMask,
-                    gridUnitPosition,
-                    colElemData.extraData
+                    { row = rowIndex, col = colIndex },
+                    position,
+                    colElemData.extraData,
+                    nil
                 )
                 self.grid[rowIndex][colIndex] = gridUnitInstance
 
@@ -105,7 +109,7 @@ local function initObjectField(levelInfo)
     for index, trainData in ipairs(self.trainData) do
         local trainInstance = Train.new(
             trainData,
-            self.gridPositionMap[trainData.position.row][trainData.position.col]
+            self.gridPositionMap[trainData.gridPosition.row][trainData.gridPosition.col]
         )
         table.insert(self.trains, trainInstance)
 
@@ -195,6 +199,16 @@ end
 function Level:destroy()
     self:clearSceneBackground()
     self:destroyGridLine()
+end
+
+function Level:setLevelManagerRef(levelManager)
+    for rowIndex, row in ipairs(self.grid) do
+        for colIndex, gridUnit in ipairs(row) do
+            if gridUnit ~= nil then
+                gridUnit:setLevelManager(levelManager)
+            end
+        end
+    end
 end
 
 return Level

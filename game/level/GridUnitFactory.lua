@@ -21,9 +21,24 @@ local gridUnitClassMap = {
 ---@param chiralityMask integer
 ---@param extraData table?
 ---@param position Vector3
-function GridUnitFactory.getInstance(gridUnitClassType, directionMask, chiralityMask, position, extraData, levelManager)
+function GridUnitFactory.getInstance(
+    gridUnitClassType,
+    directionMask,
+    chiralityMask,
+    gridPosition,
+    position,
+    extraData,
+    levelManager
+)
     logger:debug("Creating grid unit of type: " .. gridUnitClassType)
-    local gridUnitInstance = gridUnitClassMap[gridUnitClassType].new(directionMask, chiralityMask, position, extraData, levelManager)
+    local gridUnitInstance = gridUnitClassMap[gridUnitClassType].new(
+        directionMask,
+        chiralityMask,
+        gridPosition,
+        position,
+        extraData,
+        levelManager
+    )
     return gridUnitInstance
 end
 

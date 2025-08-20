@@ -238,13 +238,6 @@ function Train:intermediateSwerve(referencePos, centerPos, initialTowards, swerv
     end, 1.0)
 end
 
-function Train:setLinearMotor(velocity, duration)
-    ---@type Obstacle
-    local trainBaseEntity = self.entities.base
-
-    api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
-end
-
 function Train:initForward()
     local initDirection = self:initForwardDirection()
     return Common.gridPositionMove(self.initTrainData.gridPosition.row, self.initTrainData.gridPosition.col,

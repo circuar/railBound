@@ -1,9 +1,10 @@
 -- FixedNormalRail.lua
-local Logger            = require "logger.Logger"
-local Array             = require "util.Array"
-local api               = require "api"
-local Common            = require "util.Common"
+local Logger                = require "logger.Logger"
+local Array                 = require "util.Array"
+local api                   = require "api"
+local Common                = require "util.Common"
 local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
+local GameResource          = require "common.GameResource"
 
 ---@class FixedNormalRail:GridUnit
 ---@field private initParamData table
@@ -12,15 +13,15 @@ local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 ---@field private gridPosition table
 ---@field private position Vector3
 ---@field private levelManager LevelManager
----@field private associatedEntities Unit[]
+---@field private associatedEntities table
 ---@field private blocking boolean
 ---@field private fault boolean
 ---@field private trainList Train[]
 ---@field private trainForwardData table[]
-local FixedNormalRail   = {}
-FixedNormalRail.__index = FixedNormalRail
+local FixedNormalRail       = {}
+FixedNormalRail.__index     = FixedNormalRail
 
-local logger            = Logger.new("FixedNormalRail")
+local logger                = Logger.new("FixedNormalRail")
 
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
@@ -57,7 +58,7 @@ function FixedNormalRail:checkEnterPermit(enterDirection)
 end
 
 function FixedNormalRail:destroy()
-    for index, entity in ipairs(self.associatedEntities) do
+    for key, entity in pairs(self.associatedEntities) do
         api.base.destroyEntity(entity)
     end
 end
@@ -129,6 +130,36 @@ function FixedNormalRail:launch()
     error()
 end
 
+function FixedNormalRail:render()
+    local zeroDirection = (Array.find(self.directionMask, 0) - 1 - 1) % 4 + 1
+
+    local straightRotation = (zeroDirection - 1) * math.pi / 2
+    local straightRailEntity = api.base.createEntity(
+        GameResource.GAME_RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
+        self.position,
+        math.Quaternion(0, straightRotation, 0),
+        math.Vector3(1, 1, 1)
+    )
+
+    self.associatedEntities.straight = straightRailEntity
+
+    local channelCount = Array.countElement(self.directionMask, 1)
+    if channelCount == 3 then
+        local cornerRotation = 0
+        if self.chiralityMask == 0 then
+            cornerRotation = (zeroDirection - 1 - 2) % 4 * math.pi / 2
+        else
+            cornerRotation = (zeroDirection - 1 + 1) % 4 * math.pi / 2
+        end
+        api.base.createEntity(
+            GameResource.GAME_RAIL_ENTITY_CORNER_PRESET_ID,
+            self.position,
+            math.Quaternion(0, cornerRotation, 0),
+            math.Vector3(1, 1, 1)
+        )
+    end
+end
+
 function FixedNormalRail:mirror()
     logger:error("This method should not be called in this class, please check the configuration file or level logic.")
     error()
@@ -152,6 +183,8 @@ function FixedNormalRail:wait(trainInstance, enterDirection)
     }
 end
 
-
+function FixedNormalRail:setLevelManager(levelManager)
+    self.levelManager = levelManager
+end
 
 return FixedNormalRail

@@ -42,21 +42,21 @@ local logger         = Logger.new("LevelManager")
 
 local instance       = nil
 
-local function createUnitGridRail(grid, row, col, centerPosition)
-    local gridUnitRef = grid[row][col]
-    if gridUnitRef ~= nil then
-        logger:error("This grid unit slot already has a object.")
-        error()
-    end
-    local gridUnit = GridUnitFactory.getInstance(
-        GridUnitClassEnum.RAIL_MOVABLE,
-        { 0, 1, 0, 1 },
-        1,
-        centerPosition
-    )
-    grid[row][col] = gridUnit
-    return gridUnit
-end
+-- local function createUnitGridRail(grid, row, col, centerPosition)
+--     local gridUnitRef = grid[row][col]
+--     if gridUnitRef ~= nil then
+--         logger:error("This grid unit slot already has a object.")
+--         error()
+--     end
+--     local gridUnit = GridUnitFactory.getInstance(
+--         GridUnitClassEnum.RAIL_MOVABLE,
+--         { 0, 1, 0, 1 },
+--         1,
+--         centerPosition
+--     )
+--     grid[row][col] = gridUnit
+--     return gridUnit
+-- end
 
 
 ---comment
@@ -155,6 +155,7 @@ function LevelManager:loadLevel(levelIndex)
     self.levelInstance = levelInstance
     self.currentLevelGridSize = { row = levelInstance.gridRowSize, col = levelInstance.gridColSize }
 
+    levelInstance:setLevelManagerRef(self)
 
     levelInstance:renderFilter()
     levelInstance:setLevelCamera()
@@ -373,9 +374,6 @@ function LevelManager:runLevel()
         loopTimer:run()
     end, Train.getInitForwardDuration())
 end
-
-
-
 
 -- callback method =============================================================
 

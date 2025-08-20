@@ -69,7 +69,11 @@ function GridUnit:mirror() end
 function GridUnit:launch() end
 
 function GridUnit:update()
-    
+
+end
+
+function GridUnit:setLevelManager(levelManager)
+
 end
 
 return GridUnit
