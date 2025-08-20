@@ -131,9 +131,9 @@ function FixedNormalRail:launch()
 end
 
 function FixedNormalRail:render()
-    local zeroDirection = (Array.find(self.directionMask, 0) - 1 - 1) % 4 + 1
+    local zeroDirection = Array.find(self.directionMask, 0)
 
-    local straightRotation = (zeroDirection - 1) * math.pi / 2
+    local straightRotation = -(zeroDirection % 2) * math.pi / 2
     local straightRailEntity = api.base.createEntity(
         GameResource.GAME_RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
         self.position,
@@ -146,12 +146,15 @@ function FixedNormalRail:render()
     local channelCount = Array.countElement(self.directionMask, 1)
     if channelCount == 3 then
         local cornerRotation = 0
+
         if self.chiralityMask == 0 then
             cornerRotation = (zeroDirection - 1 - 2) % 4 * math.pi / 2
         else
             cornerRotation = (zeroDirection - 1 + 1) % 4 * math.pi / 2
         end
-        api.base.createEntity(
+        print("===========chiralityMask: " .. self.chiralityMask)
+        print(cornerRotation)
+        self.associatedEntities.corner = api.base.createEntity(
             GameResource.GAME_RAIL_ENTITY_CORNER_PRESET_ID,
             self.position,
             math.Quaternion(0, cornerRotation, 0),

@@ -72,8 +72,6 @@ function GridUnit:update()
 
 end
 
-function GridUnit:setLevelManager(levelManager)
-
-end
+function GridUnit:setLevelManager(levelManager) end
 
 return GridUnit
