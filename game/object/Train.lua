@@ -5,6 +5,7 @@ local Global                = require "common.Global"
 local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Logger                = require "logger.Logger"
 local GameResource          = require "common.GameResource"
+local TrainTypeEnum         = require "common.enum.TrainTypeEnum"
 
 
 ---@class Train
@@ -13,7 +14,7 @@ local GameResource          = require "common.GameResource"
 ---@field private initDirection PositionDirectionEnum
 ---@field private trainId integer
 ---@field private sequenceId integer
----@field private trainType string
+---@field private trainType TrainTypeEnum
 ---@field private trainGroup integer
 ---@field private gridPosition table
 ---@field private initDirectionMask integer[]
@@ -29,11 +30,19 @@ local logger  = Logger.new("Train")
 local TRAIN_SPEED                      = Global.GAME_GRID_SIZE /
     (Global.GAME_GRID_LOOP_FRAME_COUNT * Global.LOGIC_FRAME_INTERVAL)
 local SURROUND_CENTER_ENTITY_PRESET_ID = 1
-
+local TRAIN_MODEL_LENGTH               = 7.0
 
 
 function Train.getTrainSpeed()
     return TRAIN_SPEED
+end
+
+function Train.getModelLength()
+    return TRAIN_MODEL_LENGTH
+end
+
+function Train.getInitForwardDuration()
+    return (Global.GAME_GRID_SIZE - TRAIN_MODEL_LENGTH) / 2 / TRAIN_SPEED
 end
 
 function Train.new(trainData, initPosition)
@@ -95,6 +104,10 @@ function Train:getDirection()
     return self.direction
 end
 
+function Train:getTrainType()
+    return self.trainType
+end
+
 ---@param referencePos Vector3
 ---@param towards PositionDirectionEnum
 ---@param gridPos table
@@ -104,6 +117,7 @@ function Train:straight(referencePos, towards, gridPos)
             "If the current train instance is in the intermediate state, exit the intermediate state before calling the current method.")
         error()
     end
+
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -117,6 +131,7 @@ function Train:straight(referencePos, towards, gridPos)
 
     local velocity = Common.directionToVector(towards) * TRAIN_SPEED
     local duration = Global.GAME_GRID_SIZE / TRAIN_SPEED
+
     api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
 end
 
@@ -253,6 +268,20 @@ end
 function Train:reset()
     self:destroy()
     self:render()
+end
+
+function Train:showDirectionArrow()
+
+end
+
+function Train:hideDirectionArrow()
+
+end
+
+function Train:fault()
+    if self.trainType == TrainTypeEnum.NORMAL then
+        -- TODO: effect
+    end
 end
 
 return Train

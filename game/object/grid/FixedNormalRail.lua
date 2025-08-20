@@ -127,7 +127,9 @@ function FixedNormalRail:mirror()
 end
 
 function FixedNormalRail:onEnter(trainInstance)
-    
+    if self.fault then
+        
+    end
 end
 
 

@@ -6,6 +6,9 @@ local GridUnitFactory   = require "game.level.GridUnitFactory"
 local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 local CameraManager     = require "component.CameraManager"
 local Train             = require "game.object.Train"
+local Common            = require "util.Common"
+local Array             = require "util.Array"
+local TrainTypeEnum     = require "common.enum.TrainTypeEnum"
 -- Level.lua
 
 -- This class should be used as a carrier for the data loaded by LevelLoader and
@@ -26,6 +29,7 @@ local Train             = require "game.object.Train"
 ---@field gridPositionMap Vector3[][]
 ---@field trainData table[]
 ---@field trains Train[]
+---@field normalTrainCount integer
 ---@field trainGroupCount integer
 ---@field finalLinkedGridUnits FinalLinkedRail[]
 ---@field gridLineEntityList Unit[]
@@ -62,6 +66,7 @@ local function initObjectField(levelInfo)
         gridPositionMap = {},
         trainData = levelInfo.levelData.trainData,
         trains = {},
+        normalTrainCount = 0,
         trainGroupCount = levelInfo.levelData.groupChannelCount,
         finalLinkedGridUnits = {},
 
@@ -98,10 +103,15 @@ local function initObjectField(levelInfo)
 
     -- init train object
     for index, trainData in ipairs(self.trainData) do
-        table.insert(self.trains, Train.new(
+        local trainInstance = Train.new(
             trainData,
-            self.gridPositionMap[trainData.position.row][trainData.position.col])
+            self.gridPositionMap[trainData.position.row][trainData.position.col]
         )
+        table.insert(self.trains, trainInstance)
+
+        if trainInstance:getTrainType() == TrainTypeEnum.NORMAL then
+            self.normalTrainCount = self.normalTrainCount + 1
+        end
     end
 
     return self
@@ -176,6 +186,10 @@ end
 function Level:setLevelCamera()
     local cameraManager = CameraManager.instance()
     cameraManager:setCameraDistance(self.cameraDistance)
+end
+
+function Level:render()
+
 end
 
 function Level:destroy()

@@ -34,6 +34,21 @@ function Array.countElement(arr, elem)
 end
 
 ---comment
+---@param arr any[]
+---@param conditionFunction fun(elem:any, index:integer, arrLength:integer):boolean
+function Array.countElemByCondition(arr, conditionFunction)
+    local arrLength = #arr
+    local count = 0
+
+    for index, value in ipairs(arr) do
+        if conditionFunction(value, index, arrLength) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+---comment
 ---@param arr any
 ---@return table
 function Array.copy(arr)

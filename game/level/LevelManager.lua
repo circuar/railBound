@@ -1,20 +1,21 @@
-local OperationStack        = require "game.core.OperationStack"
-local GameUI                = require "component.GameUI"
-local Logger                = require "logger.Logger"
-local CameraManager         = require "component.CameraManager"
-local Global                = require "common.Global"
-local api                   = require "api"
-local GameResource          = require "common.GameResource"
-local CursorStatusEnum      = require "common.enum.CursorStatusEnum"
-local Array                 = require "util.Array"
-local GridUnitFactory       = require "game.level.GridUnitFactory"
-local GridUnitClassEnum     = require "common.enum.GridUnitClassEnum"
-local Train                 = require "game.object.Train"
-local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
-local Common                = require "util.Common"
-local FrameTimer            = require "game.core.FrameTimer"
-local LevelMetaDataManager  = require "game.level.LevelMetaDataManager"
-local GameUIRunBtnStatusEnum= require "common.enum.GameUIRunBtnStatusEnum"
+local OperationStack         = require "game.core.OperationStack"
+local GameUI                 = require "component.GameUI"
+local Logger                 = require "logger.Logger"
+local CameraManager          = require "component.CameraManager"
+local Global                 = require "common.Global"
+local api                    = require "api"
+local GameResource           = require "common.GameResource"
+local CursorStatusEnum       = require "common.enum.CursorStatusEnum"
+local Array                  = require "util.Array"
+local GridUnitFactory        = require "game.level.GridUnitFactory"
+local GridUnitClassEnum      = require "common.enum.GridUnitClassEnum"
+local Train                  = require "game.object.Train"
+local PositionDirectionEnum  = require "common.enum.PositionDirectionEnum"
+local Common                 = require "util.Common"
+local FrameTimer             = require "game.core.FrameTimer"
+local LevelMetaDataManager   = require "game.level.LevelMetaDataManager"
+local GameUIRunBtnStatusEnum = require "common.enum.GameUIRunBtnStatusEnum"
+local TrainTypeEnum          = require "common.enum.TrainTypeEnum"
 
 
 ---@class LevelManager
@@ -29,6 +30,7 @@ local GameUIRunBtnStatusEnum= require "common.enum.GameUIRunBtnStatusEnum"
 ---@field deleteMode boolean
 ---@field levelRunning boolean
 ---@field trainFaultArray Train[]
+---@field hinderTrainFinalArray Train[]
 ---@field trainSuccessArray Train[]
 ---@field trainWaitArray Train[]
 ---@field trainGroupSuccessArray integer[]
@@ -104,6 +106,7 @@ local function constructor()
         deleteMode = false,
         levelRunning = false,
         trainFaultArray = {},
+        hinderTrainFinalArray = {},
         trainSuccessArray = {},
         trainWaitArray = {},
         trainGroupSuccessArray = {}
@@ -207,6 +210,42 @@ function LevelManager:unLoadLevel()
     self.trainFaultArray = {}
 end
 
+---@param grid GridUnit[][]
+---@param gridSize table
+---@param train Train
+---@param forward table
+local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirection, cache)
+    if Array.contains(cache, train) then
+        return false
+    end
+
+    table.insert(cache, train)
+
+    local nextPosition = forward[train:getTrainId()]
+    local nextGridUnit = grid[nextPosition.row][nextPosition.col]
+
+    if nextGridUnit ~= nil and nextGridUnit:isBusy() then
+        local nextTrainInstance = nextGridUnit:getSingleHoldingTrain()
+        return checkTrainWillFault(grid, gridSize, nextTrainInstance, forward, forwardDirection, cache)
+    end
+
+    local faultCondition = (
+        nextPosition.row < 1
+        or nextPosition.row > gridSize.row
+        or nextPosition.col < 1
+        or nextPosition.row > gridSize.col
+        or nextGridUnit == nil
+        or nextGridUnit:isFault()
+        or nextGridUnit:isWaiting()
+        or not nextGridUnit:checkEnterPermit(
+            Common.directionReverse(forwardDirection[train:getTrainId()])
+        )
+    )
+
+    return faultCondition
+end
+
+
 function LevelManager:runLevel()
     if self.levelRunning then
         logger:error("Level already running, repeated triggering.")
@@ -238,9 +277,10 @@ function LevelManager:runLevel()
         --     initForward
         local nextPosition = train:initForward()
         local initLeaveDirection = train:initForwardDirection()
+        local trainId = train:getTrainId()
 
-        forward[train.trainId] = nextPosition
-        forwardDirection[train.trainId] = initLeaveDirection
+        forward[trainId] = nextPosition
+        forwardDirection[trainId] = initLeaveDirection
 
         local resumeCondition = (
             grid[nextPosition.row][nextPosition.col] == nil
@@ -269,22 +309,13 @@ function LevelManager:runLevel()
                 or Array.contains(self.trainSuccessArray, train)
             )
             if selectCondition then
-                local currentPosition = train:getCurrentGridPosition()
-                local nextPosition = forward[train.trainId]
+                local currentPosition = train:getGridPosition()
+                local gridSize = {
+                    row = self.levelInstance.gridRowSize,
+                    col = self.levelInstance.gridColSize,
+                }
 
-                local faultCondition = (
-                    nextPosition.row < 1
-                    or nextPosition.row > self.levelInstance.gridRowSize
-                    or nextPosition.col < 1
-                    or nextPosition.row > self.levelInstance.gridColSize
-                    or grid[nextPosition.row][nextPosition.col] == nil
-                    or grid[nextPosition.row][nextPosition.col]:isFault()
-                    or grid[nextPosition.row][nextPosition.col]:checkEnterPermit(
-                        Common.directionReverse(forwardDirection[train.trainId])
-                    )
-                )
-
-                if faultCondition then
+                if checkTrainWillFault(self.levelInstance.grid, gridSize, train, forward, forwardDirection) then
                     train:fault()
                     grid[currentPosition.row][currentPosition.col]:setFault()
                     self:trainFailedSignal(train)
@@ -296,9 +327,10 @@ function LevelManager:runLevel()
         end
 
         for index, train in ipairs(loopOperationTrains) do
-            local currentLeaveDirection = forwardDirection[train.trainId]
+            local trainId = train:getTrainId()
+            local currentLeaveDirection = forwardDirection[trainId]
 
-            local nextPos = forward[train.trainId]
+            local nextPos = forward[trainId]
             local nextGridUnit = grid[nextPos.row][nextPos.col]
             local nextLeaveDirection = nextGridUnit:forwardDirection(
                 Common.directionReverse(currentLeaveDirection)
@@ -309,8 +341,8 @@ function LevelManager:runLevel()
             )
             local forwardGridUnit = grid[forwardPos.row][forwardPos.col]
 
-            forwardDirection[train.trainId] = nextLeaveDirection
-            forward[train.trainId] = forwardPos
+            forwardDirection[trainId] = nextLeaveDirection
+            forward[trainId] = forwardPos
 
             if forwardGridUnit ~= nil and forwardGridUnit:isBlocking() then
                 nextGridUnit:wait(train)
@@ -367,7 +399,7 @@ end
 ---@param successTrainInstance Train
 function LevelManager:trainSuccessSignal(successTrainInstance)
     table.insert(self.trainFaultArray, self.levelInstance.trains[successTrainInstance])
-    if #self.trainSuccessArray == #self.levelInstance.trains then
+    if #self.trainSuccessArray == self.levelInstance.normalTrainCount then
         -- GameUI.hide
         GameUI.hideGameSceneUI()
         self.gameLoopTimer:stop()
@@ -381,8 +413,14 @@ end
 --- trainSuccessSignal(successTrainId).
 ---@param failedTrainInstance Train
 function LevelManager:trainFailedSignal(failedTrainInstance)
+    if failedTrainInstance:getTrainType() == TrainTypeEnum.HINDER then
+        table.insert(self.hinderTrainFinalArray, failedTrainInstance)
+        logger:debug("The current failed train type is Hinder, skip the failed registration.")
+        return
+    end
+
     table.insert(self.trainFaultArray, self.levelInstance.trains[failedTrainInstance])
-    if #self.trainFaultArray == #self.levelInstance.trains then
+    if #self.trainFaultArray == self.levelInstance.normalTrainCount then
         GameUI.setGameUIRunBtnStatus(GameUIRunBtnStatusEnum.FAILURE)
         self.gameLoopTimer:stop()
     end
