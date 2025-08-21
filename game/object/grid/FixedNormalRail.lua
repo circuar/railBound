@@ -23,6 +23,11 @@ FixedNormalRail.__index     = FixedNormalRail
 
 local logger                = Logger.new("FixedNormalRail")
 
+local function trainRunMotor(enterDirection, leaveDirection, progressFactor)
+    
+end
+
+
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
     local initParamData = {
@@ -135,7 +140,7 @@ function FixedNormalRail:render()
 
     local straightRotation = -(zeroDirection % 2) * math.pi / 2
     local straightRailEntity = api.base.createEntity(
-        GameResource.GAME_RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
+        GameResource.RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
         self.position,
         math.Quaternion(0, straightRotation, 0),
         math.Vector3(1, 1, 1)
@@ -152,10 +157,9 @@ function FixedNormalRail:render()
         else
             cornerRotation = (zeroDirection - 1 + 1) % 4 * math.pi / 2
         end
-        print("===========chiralityMask: " .. self.chiralityMask)
-        print(cornerRotation)
+
         self.associatedEntities.corner = api.base.createEntity(
-            GameResource.GAME_RAIL_ENTITY_CORNER_PRESET_ID,
+            GameResource.RAIL_ENTITY_SINGLE_CORNER_PRESET_ID,
             self.position,
             math.Quaternion(0, cornerRotation, 0),
             math.Vector3(1, 1, 1)
@@ -182,8 +186,39 @@ function FixedNormalRail:wait(trainInstance, enterDirection)
     table.insert(self.trainList, trainInstance)
     local forwardData = {
         enterDirection = enterDirection,
+        leaveDirection = self:forwardDirection(enterDirection),
         wait = true
     }
+    table.insert(self.trainForwardData, forwardData)
+end
+
+function FixedNormalRail:update()
+    if #self.trainList > 1 then
+        self.fault = true
+
+        for index = 1, #self.trainList do
+            local trainInstance = self.trainList[index]
+            local trainForwardData = self.trainForwardData[index]
+            
+            self.levelManager:trainFailedSignal(trainInstance)
+
+
+        end
+    end
+end
+
+function FixedNormalRail:onLeave()
+    self.trainList = {}
+    self.trainForwardData = {}
+end
+
+function FixedNormalRail:resume()
+    self.levelManager:trainResumeSignal()
+
+
+end
+function FixedNormalRail:interrupt()
+    
 end
 
 function FixedNormalRail:setLevelManager(levelManager)

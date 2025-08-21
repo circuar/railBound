@@ -31,6 +31,7 @@ local TRAIN_SPEED                      = Global.GAME_GRID_SIZE /
     (Global.GAME_GRID_LOOP_FRAME_COUNT * Global.LOGIC_FRAME_INTERVAL)
 local SURROUND_CENTER_ENTITY_PRESET_ID = 1
 local TRAIN_MODEL_LENGTH               = 7.0
+local TRAIN_ENTITY_LINEAR_MOTOR_INDEX  = 0
 
 
 function Train.getTrainSpeed()
@@ -130,9 +131,10 @@ function Train:straight(referencePos, towards, gridPos)
     self.gridPosition.col = gridPos.col
 
     local velocity = Common.directionToVector(towards) * TRAIN_SPEED
-    local duration = Global.GAME_GRID_SIZE / TRAIN_SPEED
+    -- local duration = Global.GAME_GRID_SIZE / TRAIN_SPEED
 
-    api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
+    -- api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
+    api.base.setLinearMotorVelocity(trainBaseEntity, TRAIN_ENTITY_LINEAR_MOTOR_INDEX, velocity, false)
 end
 
 function Train:intermediateStraight(referencePos, towards, gridPos)
@@ -246,6 +248,11 @@ end
 
 function Train:initForwardDirection()
     return self.initDirection
+end
+
+function Train:stopMotor()
+    api.base.setLinearMotorVelocity(self.entities.base, TRAIN_ENTITY_LINEAR_MOTOR_INDEX, math.Vector3(0, 0, 0), false)
+    api.base.removeSurroundMotor(self.entities.base)
 end
 
 function Train:render()

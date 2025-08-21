@@ -1,63 +1,63 @@
 local api = require "api"
 
----@class FrameTimer
----@field intervalFrame integer
+---@class SimpleTimer
+---@field interval number
 ---@field immediate boolean
 ---@field task fun():nil
 ---@field taskPerformCount integer
 ---@field stopFlag boolean
-local FrameTimer = {}
-FrameTimer.__index = FrameTimer
+local SimpleTimer = {}
+SimpleTimer.__index = SimpleTimer
 
 ---Constructor
----@param intervalFrame integer
+---@param interval number
 ---@param immediate boolean
-function FrameTimer.new(intervalFrame, immediate)
+function SimpleTimer.new(interval, immediate)
     local self = setmetatable({
-        intervalFrame = intervalFrame,
+        interval = interval,
         immediate = immediate,
         task = function() end,
         taskPerformCount = 0,
         stopFlag = false
-    }, FrameTimer)
+    }, SimpleTimer)
     return self
 end
 
-function FrameTimer:setTask(task)
+function SimpleTimer:setTask(task)
     self.task = task
 end
 
-function FrameTimer:getIntervalFrame()
-    return self.intervalFrame
+function SimpleTimer:getIntervalFrame()
+    return self.interval
 end
 
-function FrameTimer:isImmediate()
+function SimpleTimer:isImmediate()
     return self.immediate
 end
 
-function FrameTimer:run()
+function SimpleTimer:run()
     local function taskWrapper()
         if self.stopFlag then
             return
         end
         self.task()
         self.taskPerformCount = self.taskPerformCount + 1
-        api.setTimeout(taskWrapper, self.intervalFrame, true)
+        api.setTimeout(taskWrapper, self.interval)
     end
 
     if self.immediate then
         taskWrapper()
     else
-        api.setTimeout(taskWrapper, self.intervalFrame, true)
+        api.setTimeout(taskWrapper, self.interval)
     end
 end
 
-function FrameTimer:stop()
+function SimpleTimer:stop()
     self.stopFlag = true
 end
 
-function FrameTimer:isStop()
+function SimpleTimer:isStop()
     return self.stopFlag
 end
 
-return FrameTimer
+return SimpleTimer

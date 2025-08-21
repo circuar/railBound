@@ -303,5 +303,11 @@ function base.getChildEntityList(entity)
     return entity.get_children()
 end
 
+---Remove entity surround motor.
+---@param entity Unit
+function base.removeSurroundMotor(entity)
+    entity.remove_surround_motor()
+end
+
 api.base = base
 return api

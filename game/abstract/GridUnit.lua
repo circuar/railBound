@@ -53,7 +53,7 @@ function GridUnit:getSingleHoldingTrain() return Train end
 
 function GridUnit:wait(trainInstance, enterDirection) end
 
-function GridUnit:resume(trainInstance) end
+function GridUnit:resume() end
 
 ---reset this grid unit status
 function GridUnit:reset() end
@@ -68,9 +68,13 @@ function GridUnit:mirror() end
 
 function GridUnit:launch() end
 
-function GridUnit:update()
+function GridUnit:update() end
 
-end
+function GridUnit:interrupt() end
+
+function GridUnit:supportsBlockSignal() end
+
+function GridUnit:addBlockAffectedGridUnit(gridUnit) end
 
 function GridUnit:setLevelManager(levelManager) end
 

@@ -350,12 +350,16 @@ function LevelManager:runLevel()
             forwardDirection[trainId] = nextLeaveDirection
             forward[trainId] = forwardPos
 
-            if forwardGridUnit ~= nil and forwardGridUnit:isBlocking() then
-                nextGridUnit:wait(train)
+            if forwardGridUnit ~= nil and forwardGridUnit:supportsBlockSignal() then
+                forwardGridUnit:addBlockAffectedGridUnit(nextGridUnit)
 
-                if not Array.contains(updateGridUnitList, nextGridUnit) then
-                    table.insert(updateGridUnitList, nextGridUnit)
+                if forwardGridUnit:isBlocking() then
+                    if not Array.contains(updateGridUnitList, nextGridUnit) then
+                        table.insert(updateGridUnitList, nextGridUnit)
+                    end
                 end
+
+                nextGridUnit:wait(train)
             else
                 nextGridUnit:onEnter(train)
 
