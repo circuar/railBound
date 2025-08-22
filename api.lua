@@ -309,5 +309,12 @@ function base.removeSurroundMotor(entity)
     entity.remove_surround_motor()
 end
 
+---Set entity linear velocity.
+---@param entity Unit
+---@param velocity Vector3
+function base.setLinearVelocity(entity, velocity)
+    entity.set_linear_velocity(velocity)
+end
+
 api.base = base
 return api
