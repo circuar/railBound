@@ -23,11 +23,6 @@ FixedNormalRail.__index     = FixedNormalRail
 
 local logger                = Logger.new("FixedNormalRail")
 
-local function trainRunMotor(enterDirection, leaveDirection, progressFactor)
-    
-end
-
-
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
     local initParamData = {

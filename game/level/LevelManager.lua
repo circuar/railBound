@@ -228,26 +228,30 @@ local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirect
     local nextPosition = forward[train:getTrainId()]
     local nextGridUnit = grid[nextPosition.row][nextPosition.col]
 
-    if nextGridUnit ~= nil and nextGridUnit:isBusy() then
-        local nextTrainInstance = nextGridUnit:getSingleHoldingTrain()
-        return checkTrainWillFault(grid, gridSize, nextTrainInstance, forward, forwardDirection, cache)
-    end
-
     local faultCondition = (
         nextPosition.row < 1
         or nextPosition.row > gridSize.row
         or nextPosition.col < 1
         or nextPosition.row > gridSize.col
+
         or nextGridUnit == nil
         or not nextGridUnit:checkEnterPermit(
             Common.directionReverse(forwardDirection[train:getTrainId()])
         )
         or nextGridUnit:isFault()
         or nextGridUnit:isWaiting()
-
     )
 
-    return faultCondition
+    if faultCondition then
+        return true
+    end
+
+    if nextGridUnit:isBusy() then
+        local nextTrainInstance = nextGridUnit:getSingleHoldingTrain()
+        return checkTrainWillFault(grid, gridSize, nextTrainInstance, forward, forwardDirection, cache)
+    end
+
+    return false
 end
 
 
@@ -394,15 +398,35 @@ function LevelManager:runLevel()
     local forward = {}
     local forwardDirection = {}
 
-    local function toggleTimeSliceHandler()
+    ---@return Train[]
+    local function selectOperationTrains()
+        local operationTrains = {}
+
         for index, train in ipairs(trains) do
+            local selectCondition = not (
+                Array.contains(self.trainSuccessArray, train)
+                or Array.contains(self.trainWaitArray, train)
+                or Array.contains(self.trainFaultArray, train)
+            )
+
+            if selectCondition then
+                table.insert(operationTrains, train)
+            end
+        end
+
+        return operationTrains
+    end
+
+    local function toggleTimeSliceHandler()
+        local operationTrains = selectOperationTrains()
+
+        for index, train in ipairs(operationTrains) do
             local currentPosition = train:getGridPosition()
             local currentGridUnit = grid[currentPosition.row][currentPosition.col]
 
-            currentGridUnit:onLeave(train)
+            currentGridUnit:onLeave()
         end
-
-        for index, train in ipairs(trains) do
+        for index, train in ipairs(operationTrains) do
             local nextPosition = forward[train:getTrainId()]
             local nextGridUnit = grid[nextPosition.row][nextPosition.col]
             local enterDirection = Common.directionReverse(forwardDirection[train:getTrainId()])
@@ -410,19 +434,40 @@ function LevelManager:runLevel()
             forward[train:getTrainId()] = nextGridUnit:forward(enterDirection)
             forwardDirection[train:getTrainId()] = nextGridUnit:forwardDirection(enterDirection)
 
+            nextGridUnit:preEnter(train)
+        end
+
+        for index, train in ipairs(operationTrains) do
+            local nextPosition = forward[train:getTrainId()]
+            local nextGridUnit = grid[nextPosition.row][nextPosition.col]
+            local enterDirection = Common.directionReverse(forwardDirection[train:getTrainId()])
+
             nextGridUnit:onEnter(train, enterDirection)
         end
     end
 
     local function intermediateTimeSliceHandler()
-        for index, train in ipairs(trains) do
+        local beforeSignalOperationTrains = selectOperationTrains()
+
+        for index, train in ipairs(beforeSignalOperationTrains) do
             local currentGridPosition = train:getGridPosition()
             local currentGridUnit = grid[currentGridPosition.row][currentGridPosition.col]
 
-            currentGridUnit:preSignal(train)
+            currentGridUnit:preSignal()
         end
 
-        for index, train in ipairs(trains) do
+        for index, waitTrain in ipairs(self.trainWaitArray) do
+            local waitingForGridPosition = forward[waitTrain:getTrainId()]
+            local waitingForGridUnit = grid[waitingForGridPosition.row][waitingForGridPosition.col]
+
+            if not waitingForGridUnit:isBlocking() then
+                Array.removeElement(self.trainWaitArray, waitTrain)
+            end
+        end
+
+        local afterSignalOperationTrains = selectOperationTrains()
+
+        for index, train in ipairs(afterSignalOperationTrains) do
             local currentGridPosition = train:getGridPosition()
             local currentGridUnit = grid[currentGridPosition.row][currentGridPosition.col]
 
@@ -434,14 +479,15 @@ function LevelManager:runLevel()
             local trainId = train:getTrainId()
 
             if checkTrainWillFault(grid, gridSize, train, forward, forwardDirection, {}) then
-                currentGridUnit:setFault(train)
+                table.insert(self.trainFaultArray, train)
+                currentGridUnit:setFault()
             else
                 local nextEnterDirection = Common.directionReverse(forwardDirection[trainId])
                 local nextGridPosition = currentGridUnit:forward(nextEnterDirection)
                 local nextGridUnit = grid[nextGridPosition.row][nextGridPosition.col]
 
                 if nextGridUnit:isBlocking() then
-                    currentGridUnit:wait(train)
+                    currentGridUnit:wait()
                 else
                     currentGridPosition:onIntermediateTimeSlice(train)
                 end

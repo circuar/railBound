@@ -31,6 +31,11 @@ function GridUnit:render() end
 --- Destroy associated entities.
 function GridUnit:destroy() end
 
+---reset this grid unit status
+function GridUnit:reset() end
+
+function GridUnit:preEnter(trainInstance) end
+
 ---when a train enter this grid unit, you can call this method to proxy action
 ---of the train.
 ---
@@ -39,8 +44,11 @@ function GridUnit:destroy() end
 function GridUnit:onEnter(trainInstance, enterDirection) end
 
 --- Corresponding trigger when leaving.
----@param trainInstance Train
-function GridUnit:onLeave(trainInstance) end
+function GridUnit:onLeave() end
+
+function GridUnit:preSignal() end
+
+function GridUnit:onIntermediate() end
 
 function GridUnit:isBlocking() end
 
@@ -51,12 +59,7 @@ function GridUnit:isBusy() end
 ---@return Train
 function GridUnit:getSingleHoldingTrain() return Train end
 
-function GridUnit:wait(trainInstance, enterDirection) end
-
-function GridUnit:resume() end
-
----reset this grid unit status
-function GridUnit:reset() end
+function GridUnit:wait() end
 
 function GridUnit:isFixed() end
 
@@ -68,14 +71,8 @@ function GridUnit:mirror() end
 
 function GridUnit:launch() end
 
-function GridUnit:update() end
-
-function GridUnit:interrupt() end
-
-function GridUnit:supportsBlockSignal() end
-
-function GridUnit:addBlockAffectedGridUnit(gridUnit) end
-
 function GridUnit:setLevelManager(levelManager) end
+
+function GridUnit:export() end
 
 return GridUnit
