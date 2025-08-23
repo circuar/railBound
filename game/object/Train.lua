@@ -92,6 +92,7 @@ end
 ---@param referencePos Vector3
 ---@param towards PositionDirectionEnum
 function Train:straight(referencePos, towards)
+    logger:debug("straight")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -112,6 +113,7 @@ end
 ---@param initialTowards PositionDirectionEnum
 ---@param swerveMask integer
 function Train:swerve(referencePos, initialTowards, swerveMask)
+    logger:debug("swerve")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -147,6 +149,7 @@ function Train:swerve(referencePos, initialTowards, swerveMask)
 end
 
 function Train:intermediateSwerve(referencePos, initialTowards, swerveMask)
+    logger:debug("i - straight")
     local trainBaseEntity = self.entities.base
 
     self.direction = Common.ternary(swerveMask == 0, (initialTowards - 1 - 1) % 4 + 1,
@@ -257,12 +260,14 @@ function Train:render()
     local entityGroup = api.base.createEntityGroup(
         GameResource.TRAIN_MODEL_GROUP_PRESET_ID,
         self.initPosition + renderOffset,
+        -- self.initPosition,
         math.Quaternion(0, rotationY, 0)
     )
 
     local base = api.base.getChildEntityList(entityGroup)[1]
 
     -- api.base.setEntityPosition(base, self.initPosition)
+
     self.entities.base = base
     self.linearMotorProxy = LinearMoverComponent.new(base)
 end
@@ -294,6 +299,7 @@ function Train:fault()
 end
 
 function Train:straightFault(referencePos, towards)
+    logger:debug("straight - f")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -311,6 +317,7 @@ function Train:straightFault(referencePos, towards)
 end
 
 function Train:swerveFault(referencePos, initialTowards, swerveMask)
+    logger:debug("swerve - f")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)

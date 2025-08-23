@@ -22,7 +22,9 @@ api.setTimeout(function()
     GameLoader.instance():initGame(0)
 end, 3.0)
 
-
+api.setTimeout(function()
+    LevelManager.instance():runLevel()
+end, 7.0)
 
 
 -- local test = api.base.getEntityById(1492576201)
@@ -60,3 +62,114 @@ end, 3.0)
 --         train:destroy()
 --     end, 3.2)
 -- end
+
+
+-- TODO:
+-- 2025-08-23 21:42:50
+-- [info]
+-- "[ DEBUG ] @ GameUI ==> Set rail count text. Rail count: 999"
+-- 2025-08-23 21:42:50
+-- [info]
+-- "[ DEBUG ] @ GameUI ==> Set level name label text. Level name: 测试关卡"
+-- 2025-08-23 21:42:51
+-- [info]
+-- "[ DEBUG ] @ LevelSelectScene ==> LevelSelectScene on exit."
+-- 2025-08-23 21:42:51
+-- [info]
+-- "[ DEBUG ] @ GameUI ==> Send hide level select ui event"
+-- 2025-08-23 21:42:54
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:42:54
+-- [info]
+-- "[ DEBUG ] @ Train ==> straight"
+-- 2025-08-23 21:42:55
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: toggleTimeSlice"
+-- 2025-08-23 21:42:55
+-- [info]
+-- "[ DEBUG ] @ FixedNormalRail ==> Train will enter this grid unit. GridPosition: table, trainId: 1."
+-- 2025-08-23 21:42:55
+-- [info]
+-- "[ DEBUG ] @ Train ==> swerve"
+-- 2025-08-23 21:42:55
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:42:55
+-- [info]
+-- "[ DEBUG ] @ Train ==> i - straight"
+-- 2025-08-23 21:42:56
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: toggleTimeSlice"
+-- 2025-08-23 21:42:56
+-- [info]
+-- "[ DEBUG ] @ FixedNormalRail ==> Train will enter this grid unit. GridPosition: table, trainId: 1."
+-- 2025-08-23 21:42:56
+-- [info]
+-- "[ DEBUG ] @ Train ==> swerve"
+-- 2025-08-23 21:42:56
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:42:56
+-- [info]
+-- "[ DEBUG ] @ Train ==> i - straight"
+-- 2025-08-23 21:42:57
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: toggleTimeSlice"
+-- 2025-08-23 21:42:57
+-- [info]
+-- "[ DEBUG ] @ FixedNormalRail ==> Train will enter this grid unit. GridPosition: table, trainId: 1."
+-- 2025-08-23 21:42:57
+-- [info]
+-- "[ DEBUG ] @ Train ==> swerve"
+-- 2025-08-23 21:42:57
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:42:57
+-- [info]
+-- "[ DEBUG ] @ Train ==> i - straight"
+-- 2025-08-23 21:42:58
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: toggleTimeSlice"
+-- 2025-08-23 21:42:58
+-- [info]
+-- "[ DEBUG ] @ FixedNormalRail ==> Train will enter this grid unit. GridPosition: table, trainId: 1."
+-- 2025-08-23 21:42:58
+-- [info]
+-- "[ DEBUG ] @ Train ==> swerve"
+-- 2025-08-23 21:42:58
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:42:58
+-- [info]
+-- "[ DEBUG ] @ Train ==> i - straight"
+-- 2025-08-23 21:42:59
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: toggleTimeSlice"
+-- 2025-08-23 21:42:59
+-- [info]
+-- "[ DEBUG ] @ FixedNormalRail ==> Train will enter this grid unit. GridPosition: table, trainId: 1."
+-- 2025-08-23 21:42:59
+-- [info]
+-- "[ DEBUG ] @ Train ==> swerve"
+-- 2025-08-23 21:42:59
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:42:59
+-- [info]
+-- "[ DEBUG ] @ Train ==> i - straight"
+-- 2025-08-23 21:43:00
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: toggleTimeSlice"
+-- 2025-08-23 21:43:00
+-- [info]
+-- "[ DEBUG ] @ FixedNormalRail ==> Train will enter this grid unit. GridPosition: table, trainId: 1."
+-- 2025-08-23 21:43:00
+-- [info]
+-- "[ DEBUG ] @ Train ==> swerve"
+-- 2025-08-23 21:43:00
+-- [info]
+-- "[ DEBUG ] @ LevelManager ==> Current time slice type: intermediateTimeSlice"
+-- 2025-08-23 21:43:00
+-- [info]
+-- "[ DEBUG ] @ Train ==> i - straight"
