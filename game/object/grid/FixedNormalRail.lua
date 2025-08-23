@@ -1,10 +1,9 @@
 -- FixedNormalRail.lua
-local Logger                = require "logger.Logger"
-local Array                 = require "util.Array"
-local api                   = require "api"
-local Common                = require "util.Common"
-local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
-local GameResource          = require "common.GameResource"
+local Logger = require "logger.Logger"
+local Array = require "util.Array"
+local api = require "api"
+local Common = require "util.Common"
+local GameResource = require "common.GameResource"
 
 ---@class FixedNormalRail:GridUnit
 ---@field private initParamData table
@@ -18,10 +17,10 @@ local GameResource          = require "common.GameResource"
 ---@field private fault boolean
 ---@field private trainList Train[]
 ---@field private trainForwardData table[]
-local FixedNormalRail       = {}
-FixedNormalRail.__index     = FixedNormalRail
+local FixedNormalRail = {}
+FixedNormalRail.__index = FixedNormalRail
 
-local logger                = Logger.new("FixedNormalRail")
+local logger = Logger.new("FixedNormalRail")
 
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
@@ -177,43 +176,12 @@ function FixedNormalRail:onEnter(trainInstance, enterDirection)
     table.insert(self.trainForwardData, forwardData)
 end
 
-function FixedNormalRail:wait(trainInstance, enterDirection)
-    table.insert(self.trainList, trainInstance)
-    local forwardData = {
-        enterDirection = enterDirection,
-        leaveDirection = self:forwardDirection(enterDirection),
-        wait = true
-    }
-    table.insert(self.trainForwardData, forwardData)
-end
-
-function FixedNormalRail:update()
-    if #self.trainList > 1 then
-        self.fault = true
-
-        for index = 1, #self.trainList do
-            local trainInstance = self.trainList[index]
-            local trainForwardData = self.trainForwardData[index]
-            
-            self.levelManager:trainFailedSignal(trainInstance)
-
-
-        end
-    end
+function FixedNormalRail:wait()
 end
 
 function FixedNormalRail:onLeave()
     self.trainList = {}
     self.trainForwardData = {}
-end
-
-function FixedNormalRail:resume()
-    self.levelManager:trainResumeSignal()
-
-
-end
-function FixedNormalRail:interrupt()
-    
 end
 
 function FixedNormalRail:setLevelManager(levelManager)
