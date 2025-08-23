@@ -1,6 +1,6 @@
-local api                    = require "api"
-local SimpleTimer            = require "game.core.SimpleTimer"
-local Logger                 = require "logger.Logger"
+local api = require "api"
+local SimpleTimer = require "game.core.SimpleTimer"
+local Logger = require "logger.Logger"
 
 -- inner class
 ---@class LinearMoverData
@@ -15,10 +15,10 @@ local Logger                 = require "logger.Logger"
 ---@field linearMoverTimers table<integer, SimpleTimer>
 ---@field moverIdCount integer
 ---@field destroyed boolean
-local LinearMoverComponent   = {}
+local LinearMoverComponent = {}
 LinearMoverComponent.__index = LinearMoverComponent
 
-local logger                 = Logger.new("LinearMoverComponent")
+local logger = Logger.new("LinearMoverComponent")
 
 ---@param linearMoverDataMap table<integer, LinearMoverData>
 local function recalculateLinearVelocity(linearMoverDataMap)

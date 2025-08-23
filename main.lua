@@ -1,10 +1,10 @@
 -- main.lua
 
-local Logger               = require "logger.Logger"
-local GlobalGameManager    = require "game.GlobalGameManager"
-local LogLevel             = require "logger.LogLevel"
-local api                  = require "api"
-local Train                = require "game.object.Train"
+local Logger = require "logger.Logger"
+local GlobalGameManager = require "game.GlobalGameManager"
+local LogLevel = require "logger.LogLevel"
+local api = require "api"
+local Train = require "game.object.Train"
 local LinearMoverComponent = require "game.object.LinearMoverComponent"
 
 Logger.setGlobalLogLevel(LogLevel.DEBUG)
