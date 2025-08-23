@@ -8,7 +8,6 @@ local GameResource = require "common.GameResource"
 local TrainTypeEnum = require "common.enum.TrainTypeEnum"
 local LinearMoverComponent = require "game.object.LinearMoverComponent"
 
-
 ---@class Train
 ---@field private initTrainData table
 ---@field private initPosition Vector3
@@ -28,13 +27,14 @@ Train.__index = Train
 local logger = Logger.new("Train")
 
 
-local TRAIN_SPEED = Global.GAME_GRID_SIZE / 2 / (Global.GAME_GRID_LOOP_FRAME_COUNT * Global.LOGIC_FRAME_INTERVAL)
+local TRAIN_LINEAR_SPEED = Global.GAME_GRID_SIZE / 2 / (Global.GAME_GRID_LOOP_FRAME_COUNT * Global.LOGIC_FRAME_INTERVAL)
+local TRAIN_ANGULAR_SPEED = 90.0 / 2 / (Global.GAME_GRID_LOOP_FRAME_COUNT * Global.LOGIC_FRAME_INTERVAL)
 local SURROUND_CENTER_ENTITY_PRESET_ID = 102818 -- test
 -- local SURROUND_CENTER_ENTITY_PRESET_ID = 1101635
 local TRAIN_MODEL_LENGTH = 7.0
 
 function Train.getTrainSpeed()
-    return TRAIN_SPEED
+    return TRAIN_LINEAR_SPEED
 end
 
 function Train.getModelLength()
@@ -58,7 +58,6 @@ function Train.new(trainData, initPosition)
             col = trainData.gridPosition.col,
         },
         direction = initDirection,
-        intermediate = false,
         entities = {},
         linearMotorProxy = nil
     }, Train)
@@ -92,21 +91,18 @@ end
 
 ---@param referencePos Vector3
 ---@param towards PositionDirectionEnum
----@param gridPos table
-function Train:straight(referencePos, towards, gridPos)
+function Train:straight(referencePos, towards)
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
 
-    local rotationY = (1 - towards) * math.pi / 2
+    local rotationY = (towards - 1) * math.pi / 2
     api.base.setRotation(trainBaseEntity, math.Quaternion(0, rotationY, 0))
 
     self.direction = towards
-    self.gridPosition.row = gridPos.row
-    self.gridPosition.col = gridPos.col
 
-    local velocity = Common.directionToVector(towards) * TRAIN_SPEED
-    local duration = Global.GAME_GRID_SIZE / 2 / TRAIN_SPEED
+    local velocity = Common.directionToVector(towards) * TRAIN_LINEAR_SPEED
+    local duration = Global.GAME_GRID_SIZE / 2 / TRAIN_LINEAR_SPEED
 
     -- api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
     self.linearMotorProxy:addLinearMover(velocity, duration)
@@ -115,20 +111,16 @@ end
 ---@param referencePos Vector3
 ---@param initialTowards PositionDirectionEnum
 ---@param swerveMask integer
----@param gridPos table
-function Train:swerve(referencePos, initialTowards, swerveMask, gridPos)
+function Train:swerve(referencePos, initialTowards, swerveMask)
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
-
-    self.gridPosition.row = gridPos.row
-    self.gridPosition.col = gridPos.col
 
     local initRotation = (initialTowards - 1) * math.pi / 2
     api.base.setRotation(trainBaseEntity, math.Quaternion(0, initRotation, 0))
 
     local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT / 2
-    local angularSpeed = 45.0 / duration
+    local angularSpeed = TRAIN_ANGULAR_SPEED
     local centerPos = nil
 
     if swerveMask == 1 then
@@ -161,7 +153,7 @@ function Train:intermediateSwerve(referencePos, initialTowards, swerveMask)
         (initialTowards - 1 + 1) % 4 + 1)
 
     local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT / 2
-    local angularSpeed = 45.0 / duration
+    local angularSpeed = TRAIN_ANGULAR_SPEED
     local centerPos = nil
 
     if swerveMask == 1 then
@@ -198,9 +190,9 @@ end
 --     api.base.setEntityPosition(base, referencePos)
 
 --     local straightDistance = Global.GAME_GRID_SIZE - 1 / 2 * TRAIN_MODEL_LENGTH
---     local duration = straightDistance / TRAIN_SPEED
+--     local duration = straightDistance / TRAIN_LINEAR_SPEED
 
---     local velocity = Common.directionToVector(towards) * TRAIN_SPEED
+--     local velocity = Common.directionToVector(towards) * TRAIN_LINEAR_SPEED
 
 --     self.linearMotorProxy:addLinearMover(velocity, duration)
 -- end
@@ -252,13 +244,25 @@ end
 
 function Train:render()
     local rotationY = (self.initDirection - 1) * math.pi / 2
+
+    -- Since the origin of the base does not coincide with the origin of the
+    -- base after the combination is made, the coordinates need to be corrected.
+    --
+    -- The reason for the separate setting is that resetting the coordinates
+    -- will cause the sub components bound to the base to not move with the base
+    -- within one frame after the assembly is created, so the operation of
+    -- resetting the coordinates cannot be performed within one frame.
+    local renderOffset = math.Vector3(-0.4863099994, 0, -0.0009299957)
+
     local entityGroup = api.base.createEntityGroup(
         GameResource.TRAIN_MODEL_GROUP_PRESET_ID,
-        self.initPosition,
+        self.initPosition + renderOffset,
         math.Quaternion(0, rotationY, 0)
     )
 
     local base = api.base.getChildEntityList(entityGroup)[1]
+
+    -- api.base.setEntityPosition(base, self.initPosition)
     self.entities.base = base
     self.linearMotorProxy = LinearMoverComponent.new(base)
 end
@@ -287,6 +291,69 @@ function Train:fault()
     if self.trainType == TrainTypeEnum.NORMAL then
         -- TODO: effect
     end
+end
+
+function Train:straightFault(referencePos, towards)
+    local trainBaseEntity = self.entities.base
+
+    api.base.setEntityPosition(trainBaseEntity, referencePos)
+
+    local rotationY = (towards - 1) * math.pi / 2
+    api.base.setRotation(trainBaseEntity, math.Quaternion(0, rotationY, 0))
+
+    self.direction = towards
+
+    local velocity = Common.directionToVector(towards) * TRAIN_LINEAR_SPEED
+    local duration = (Global.GAME_GRID_SIZE - TRAIN_MODEL_LENGTH) / 2 / TRAIN_LINEAR_SPEED
+
+    -- api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
+    self.linearMotorProxy:addLinearMover(velocity, duration)
+end
+
+function Train:swerveFault(referencePos, initialTowards, swerveMask)
+    local trainBaseEntity = self.entities.base
+
+    api.base.setEntityPosition(trainBaseEntity, referencePos)
+
+    local initRotation = (initialTowards - 1) * math.pi / 2
+    api.base.setRotation(trainBaseEntity, math.Quaternion(0, initRotation, 0))
+
+    local angularSpeed = TRAIN_ANGULAR_SPEED
+    local duration = 20.0 / angularSpeed
+
+    local centerPos = nil
+
+    if swerveMask == 1 then
+        centerPos = referencePos + Common.directionToVector((initialTowards - 1 + 1) % 4 + 1) * Global.GAME_GRID_SIZE / 2
+    else
+        angularSpeed = -angularSpeed
+        centerPos = referencePos + Common.directionToVector((initialTowards - 1 - 1) % 4 + 1) * Global.GAME_GRID_SIZE / 2
+    end
+
+    local centerEntity = api.base.createEntity(
+        SURROUND_CENTER_ENTITY_PRESET_ID,
+        centerPos,
+        math.Quaternion(0, 0, 0),
+        math.Vector3(1, 1, 1)
+    )
+
+    local angularVelocity = math.Vector3(0, angularSpeed, 0)
+
+    api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
+
+    api.setTimeout(function()
+        api.base.destroyEntity(centerEntity)
+    end, 1.0)
+end
+
+function Train:initForward()
+    local initDirection = self.initDirection
+    return Common.gridPositionMove(self.initTrainData.gridPosition.row, self.initTrainData.gridPosition.col,
+        initDirection)
+end
+
+function Train:initForwardDirection()
+    return self.initDirection
 end
 
 return Train

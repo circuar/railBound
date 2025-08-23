@@ -38,9 +38,6 @@ function LevelMetaDataManager:getLevelMetaData(levelIndex)
 end
 
 function LevelMetaDataManager:checkLevelUnlock(levelIndex, mainLevelProgress)
-    print(levelIndex)
-    print(mainLevelProgress)
-
     local mainLevelIndexTempPointer = levelIndex
     local loopCount = 0
     local maxSearchLoopCount = 10

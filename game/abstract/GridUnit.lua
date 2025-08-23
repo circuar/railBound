@@ -36,14 +36,14 @@ function GridUnit:destroy() end
 ---reset this grid unit status
 function GridUnit:reset() end
 
-function GridUnit:preEnter(trainInstance) end
+function GridUnit:preEnter(trainInstance, enterDirection) end
 
 ---when a train enter this grid unit, you can call this method to proxy action
 ---of the train.
 ---
 ---this function can change grid unit status.
 ---@param trainInstance Train
-function GridUnit:onEnter(trainInstance, enterDirection) end
+function GridUnit:onEnter(trainInstance) end
 
 --- Corresponding trigger when leaving.
 function GridUnit:onLeave() end
@@ -76,5 +76,7 @@ function GridUnit:launch() end
 function GridUnit:setLevelManager(levelManager) end
 
 function GridUnit:export() end
+
+function GridUnit:bindInitTrainInstance() end
 
 return GridUnit

@@ -80,8 +80,6 @@ local function initObjectField(levelInfo)
             local position = calcUnitPosition(rowIndex, colIndex, self.gridRowSize, self.gridColSize)
             self.gridPositionMap[rowIndex][colIndex] = position
 
-            print(position)
-
             if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
                 local gridUnitInstance = GridUnitFactory.getInstance(
                     colElemData.gridUnitType,
@@ -105,16 +103,24 @@ local function initObjectField(levelInfo)
 
     -- init train object
     for index, trainData in ipairs(self.trainData) do
+        local gridPosRow = trainData.gridPosition.row
+        local gridPosCol = trainData.gridPosition.col
+
         local trainInstance = Train.new(
             trainData,
-            self.gridPositionMap[trainData.gridPosition.row][trainData.gridPosition.col]
+            self.gridPositionMap[gridPosRow][gridPosCol]
         )
+
         table.insert(self.trains, trainInstance)
         trainInstance:render()
 
         if trainInstance:getTrainType() == TrainTypeEnum.NORMAL then
             self.normalTrainCount = self.normalTrainCount + 1
         end
+
+        -- init train start grid unit
+        local initGridUnit = self.grid[gridPosRow][gridPosCol]
+        initGridUnit:bindInitTrainInstance(trainInstance)
     end
 
     return self

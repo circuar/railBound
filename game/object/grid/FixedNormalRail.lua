@@ -1,9 +1,10 @@
 -- FixedNormalRail.lua
-local Logger = require "logger.Logger"
-local Array = require "util.Array"
-local api = require "api"
-local Common = require "util.Common"
-local GameResource = require "common.GameResource"
+local Logger            = require "logger.Logger"
+local Array             = require "util.Array"
+local api               = require "api"
+local Common            = require "util.Common"
+local GameResource      = require "common.GameResource"
+local Global            = require "common.Global"
 
 ---@class FixedNormalRail:GridUnit
 ---@field private initParamData table
@@ -15,12 +16,14 @@ local GameResource = require "common.GameResource"
 ---@field private associatedEntities table
 ---@field private blocking boolean
 ---@field private fault boolean
----@field private trainList Train[]
+---@field private waiting boolean
 ---@field private trainForwardData table[]
-local FixedNormalRail = {}
+---@field private startGridUnit boolean
+---@field private startTrainInstance Train
+local FixedNormalRail   = {}
 FixedNormalRail.__index = FixedNormalRail
 
-local logger = Logger.new("FixedNormalRail")
+local logger            = Logger.new("FixedNormalRail")
 
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
@@ -41,9 +44,11 @@ function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, positio
         levelManager = levelManager,
         associatedEntities = {},
         blocking = false,
+        waiting = false,
         fault = false,
-        trainList = {},
-        trainForwardData = {}
+        trainForwardData = {},
+        startGridUnit = false,
+        startTrainInstance = nil
     }, FixedNormalRail)
 
     return self
@@ -121,7 +126,7 @@ function FixedNormalRail:isFixed()
 end
 
 function FixedNormalRail:isBusy()
-    return #self.trainList > 0
+    return #self.trainForwardData > 0
 end
 
 function FixedNormalRail:launch()
@@ -166,26 +171,115 @@ function FixedNormalRail:mirror()
     error()
 end
 
-function FixedNormalRail:onEnter(trainInstance, enterDirection)
-    table.insert(self.trainList, trainInstance)
-    local forwardData = {
+---comment
+---@param trainInstance Train
+---@param enterDirection PositionDirectionEnum
+function FixedNormalRail:preEnter(trainInstance, enterDirection)
+    local trainForwardData = {
+        trainId = trainInstance:getTrainId(),
+        trainInstance = trainInstance,
         enterDirection = enterDirection,
-        leaveDirection = self:forwardDirection(enterDirection),
-        wait = false
+        forwardDirection = self:forwardDirection(enterDirection)
     }
-    table.insert(self.trainForwardData, forwardData)
+
+    table.insert(self.trainForwardData, trainForwardData)
+
+    logger:debug("Train will enter this grid unit. GridPosition: " ..
+        tostring(self.gridPosition) .. ", trainId: " .. trainInstance:getTrainId() .. ".")
+end
+
+function FixedNormalRail:onEnter(trainInstance)
+    local forwardDataIndex = Array.find(self.trainForwardData, trainInstance, function(arrayElem, specificElem)
+        return specificElem:getTrainId() == arrayElem.trainId
+    end)
+
+    local forwardData = self.trainForwardData[forwardDataIndex]
+
+    local referencePosition = self.position +
+        Common.directionToVector(forwardData.enterDirection) * Global.GAME_GRID_SIZE / 2
+    local swerve = forwardData.enterDirection ~= forwardData.forwardDirection
+
+    if #self.trainForwardData > 1 then
+        self.fault = true
+        self.levelManager:trainFailedSignal(trainInstance)
+
+        if swerve then
+            local swerveMask = Common.ternary(
+                (forwardData.enterDirection + 1 - 1) % 4 + 1 == forwardData.forwardDirection, 0, 1)
+            trainInstance:swerveFault(referencePosition, Common.directionReverse(forwardData.enterDirection), swerveMask)
+        else
+            trainInstance:straightFault(referencePosition, Common.directionReverse(forwardData.enterDirection))
+        end
+    else
+        if swerve then
+            local swerveMask = Common.ternary(
+                (forwardData.enterDirection + 1 - 1) % 4 + 1 == forwardData.forwardDirection, 0, 1)
+            trainInstance:swerve(referencePosition, Common.directionReverse(forwardData.enterDirection), swerveMask)
+        else
+            trainInstance:straight(referencePosition, Common.directionReverse(forwardData.enterDirection))
+        end
+    end
+end
+
+function FixedNormalRail:preSignal()
+
+end
+
+function FixedNormalRail:onIntermediate()
+    local forwardData = self.trainForwardData[1]
+    ---@type Train
+    local trainInstance = forwardData.trainInstance
+
+    local swerve = forwardData.enterDirection ~= nil and forwardData.enterDirection ~= forwardData.forwardDirection
+
+    if swerve then
+        local referencePosition = self.position +
+            Common.directionToVector(forwardData.enterDirection) * Global.GAME_GRID_SIZE / 2
+        local swerveMask = Common.ternary(
+            (forwardData.enterDirection + 1 - 1) % 4 + 1 == forwardData.forwardDirection, 0, 1)
+        trainInstance:intermediateSwerve(referencePosition, Common.directionReverse(forwardData.enterDirection),
+            swerveMask)
+    else
+        trainInstance:straight(self.position, forwardData.forwardDirection)
+    end
 end
 
 function FixedNormalRail:wait()
+    self.waiting = true
 end
 
 function FixedNormalRail:onLeave()
-    self.trainList = {}
     self.trainForwardData = {}
+end
+
+function FixedNormalRail:isWaiting()
+    return self.waiting
+end
+
+function FixedNormalRail:setFault()
+    self.fault = true
 end
 
 function FixedNormalRail:setLevelManager(levelManager)
     self.levelManager = levelManager
+end
+
+---comment
+---@param trainInstance Train
+function FixedNormalRail:bindInitTrainInstance(trainInstance)
+    self.startTrainInstance = trainInstance
+    self.startGridUnit = true
+
+    local forwardDirection = trainInstance:initForwardDirection()
+
+    local trainForwardData = {
+        trainId = trainInstance:getTrainId(),
+        trainInstance = trainInstance,
+        enterDirection = nil,
+        forwardDirection = forwardDirection
+    }
+
+    table.insert(self.trainForwardData, trainForwardData)
 end
 
 return FixedNormalRail

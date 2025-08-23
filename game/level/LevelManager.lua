@@ -226,15 +226,21 @@ local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirect
     table.insert(cache, train)
 
     local nextPosition = forward[train:getTrainId()]
-    local nextGridUnit = grid[nextPosition.row][nextPosition.col]
 
-    local faultCondition = (
+    local boundFaultCondition = (
         nextPosition.row < 1
         or nextPosition.row > gridSize.row
         or nextPosition.col < 1
         or nextPosition.row > gridSize.col
+    )
 
-        or nextGridUnit == nil
+    if boundFaultCondition then
+        return true
+    end
+
+    local nextGridUnit = grid[nextPosition.row][nextPosition.col]
+    local logicFaultCondition = (
+        nextGridUnit == nil
         or not nextGridUnit:checkEnterPermit(
             Common.directionReverse(forwardDirection[train:getTrainId()])
         )
@@ -242,7 +248,19 @@ local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirect
         or nextGridUnit:isWaiting()
     )
 
-    if faultCondition then
+    -- print(nextPosition.row < 1)
+    -- print(nextPosition.row > gridSize.row)
+    -- print(nextPosition.col < 1)
+    -- print(nextPosition.row > gridSize.col)
+
+    -- print(nextGridUnit == nil)
+    -- print(not nextGridUnit:checkEnterPermit(
+    --     Common.directionReverse(forwardDirection[train:getTrainId()])
+    -- ))
+    -- print(nextGridUnit:isFault())
+    -- print(nextGridUnit:isWaiting())
+
+    if logicFaultCondition then
         return true
     end
 
@@ -261,6 +279,11 @@ function LevelManager:runLevel()
 
     local forward = {}
     local forwardDirection = {}
+
+    for index, train in ipairs(trains) do
+        forward[train:getTrainId()] = { row = train:initForward().row, col = train:initForward().col }
+        forwardDirection[train:getTrainId()] = train:initForwardDirection()
+    end
 
     ---@return Train[]
     local function selectOperationTrains()
@@ -295,10 +318,9 @@ function LevelManager:runLevel()
             local nextGridUnit = grid[nextPosition.row][nextPosition.col]
             local enterDirection = Common.directionReverse(forwardDirection[train:getTrainId()])
 
-            forward[train:getTrainId()] = nextGridUnit:forward(enterDirection)
-            forwardDirection[train:getTrainId()] = nextGridUnit:forwardDirection(enterDirection)
 
-            nextGridUnit:preEnter(train)
+
+            nextGridUnit:preEnter(train, enterDirection)
         end
 
         for index, train in ipairs(operationTrains) do
@@ -306,7 +328,12 @@ function LevelManager:runLevel()
             local nextGridUnit = grid[nextPosition.row][nextPosition.col]
             local enterDirection = Common.directionReverse(forwardDirection[train:getTrainId()])
 
-            nextGridUnit:onEnter(train, enterDirection)
+            train:setGridPosition(nextPosition.row, nextPosition.col)
+
+            forward[train:getTrainId()] = nextGridUnit:forward(enterDirection)
+            forwardDirection[train:getTrainId()] = nextGridUnit:forwardDirection(enterDirection)
+
+            nextGridUnit:onEnter(train)
         end
     end
 
@@ -353,7 +380,7 @@ function LevelManager:runLevel()
                 if nextGridUnit:isBlocking() then
                     currentGridUnit:wait()
                 else
-                    currentGridPosition:onIntermediateTimeSlice(train)
+                    currentGridUnit:onIntermediate()
                 end
             end
         end

@@ -4,7 +4,7 @@ Array.__index = Array
 ---search the first element that equals to param
 ---@param arr any[]
 ---@param elem any
----@param comparator? fun(a:any, b:any):boolean
+---@param comparator? fun(arrayElem:any, specificElem:any):boolean
 ---@return integer
 function Array.find(arr, elem, comparator)
     local cmp = comparator or function(a, b)
