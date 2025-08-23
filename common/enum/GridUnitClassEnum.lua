@@ -1,7 +1,7 @@
 ---@alias GridUnitClassEnum integer
 local GridUnitClassEnum = {
     EMPTY = 0,
-    
+
     RAIL_MOVABLE = 1,
     RAIL_NORMAL_FIXED = 2,
 

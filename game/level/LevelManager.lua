@@ -408,18 +408,6 @@ function LevelManager:trainGroupSuccessSignal(groupId)
     end
 end
 
----comment
----@param waitTrainInstance Train
-function LevelManager:trainWaitSignal(waitTrainInstance)
-    table.insert(self.trainWaitArray, waitTrainInstance)
-end
-
----
----@param resumeTrainIdInstance Train
-function LevelManager:trainResumeSignal(resumeTrainIdInstance)
-    Array.removeElement(self.trainWaitArray, resumeTrainIdInstance)
-end
-
 --- Called when the carriage enters the terminal GridUnit and will be
 --- successfully connected.
 ---

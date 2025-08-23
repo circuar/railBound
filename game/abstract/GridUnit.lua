@@ -1,8 +1,10 @@
 local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
-local Train                 = require "game.object.Train"
+local Train = require "game.object.Train"
 ---@class GridUnit
-local GridUnit              = {}
-GridUnit.__index            = GridUnit
+local GridUnit = {}
+GridUnit.__index = GridUnit
+
+function GridUnit:getDirectionMask() end
 
 --- If the train will enter this unit, you can call this method to know which
 --- output grid unit will be next used.

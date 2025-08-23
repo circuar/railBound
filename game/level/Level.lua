@@ -6,8 +6,6 @@ local GridUnitFactory = require "game.level.GridUnitFactory"
 local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
 local CameraManager = require "component.CameraManager"
 local Train = require "game.object.Train"
-local Common = require "util.Common"
-local Array = require "util.Array"
 local TrainTypeEnum = require "common.enum.TrainTypeEnum"
 -- Level.lua
 
@@ -112,6 +110,7 @@ local function initObjectField(levelInfo)
             self.gridPositionMap[trainData.gridPosition.row][trainData.gridPosition.col]
         )
         table.insert(self.trains, trainInstance)
+        trainInstance:render()
 
         if trainInstance:getTrainType() == TrainTypeEnum.NORMAL then
             self.normalTrainCount = self.normalTrainCount + 1
@@ -190,10 +189,6 @@ end
 function Level:setLevelCamera()
     local cameraManager = CameraManager.instance()
     cameraManager:setCameraDistance(self.cameraDistance)
-end
-
-function Level:render()
-
 end
 
 function Level:destroy()
