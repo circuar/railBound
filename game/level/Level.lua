@@ -1,14 +1,14 @@
-local Global            = require "common.Global"
-local api               = require "api"
-local GameResource      = require "common.GameResource"
-local Logger            = require "logger.Logger"
-local GridUnitFactory   = require "game.level.GridUnitFactory"
+local Global = require "common.Global"
+local api = require "api"
+local GameResource = require "common.GameResource"
+local Logger = require "logger.Logger"
+local GridUnitFactory = require "game.level.GridUnitFactory"
 local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
-local CameraManager     = require "component.CameraManager"
-local Train             = require "game.object.Train"
-local Common            = require "util.Common"
-local Array             = require "util.Array"
-local TrainTypeEnum     = require "common.enum.TrainTypeEnum"
+local CameraManager = require "component.CameraManager"
+local Train = require "game.object.Train"
+local Common = require "util.Common"
+local Array = require "util.Array"
+local TrainTypeEnum = require "common.enum.TrainTypeEnum"
 -- Level.lua
 
 -- This class should be used as a carrier for the data loaded by LevelLoader and
@@ -33,10 +33,10 @@ local TrainTypeEnum     = require "common.enum.TrainTypeEnum"
 ---@field trainGroupCount integer
 ---@field finalLinkedGridUnits FinalLinkedRail[]
 ---@field gridLineEntityList Unit[]
-local Level             = {}
-Level.__index           = Level
+local Level = {}
+Level.__index = Level
 
-local logger            = Logger.new("Level")
+local logger = Logger.new("Level")
 
 ---comment
 ---@param row integer
