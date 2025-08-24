@@ -263,8 +263,6 @@ function LevelManager:runLevel()
             local nextGridUnit = grid[nextPosition.row][nextPosition.col]
             local enterDirection = Common.directionReverse(forwardDirection[train:getTrainId()])
 
-
-
             nextGridUnit:preEnter(train, enterDirection)
         end
 
@@ -274,6 +272,8 @@ function LevelManager:runLevel()
             local enterDirection = Common.directionReverse(forwardDirection[train:getTrainId()])
 
             train:setGridPosition(nextPosition.row, nextPosition.col)
+            logger:debug("Train enter gridUnit grid position: row = " ..
+                nextPosition.row .. ", col = " .. nextPosition.col)
 
             forward[train:getTrainId()] = nextGridUnit:forward(enterDirection)
             forwardDirection[train:getTrainId()] = nextGridUnit:forwardDirection(enterDirection)

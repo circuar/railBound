@@ -256,7 +256,8 @@ function FixedNormalRail:onIntermediate()
     ---@type Train
     local trainInstance = forwardData.trainInstance
 
-    local swerve = forwardData.enterDirection ~= nil and forwardData.enterDirection ~= forwardData.forwardDirection
+    local swerve = forwardData.enterDirection ~= nil and
+        Common.directionReverse(forwardData.enterDirection) ~= forwardData.forwardDirection
 
     if swerve then
         local referencePosition = self.position +

@@ -92,7 +92,6 @@ end
 ---@param referencePos Vector3
 ---@param towards PositionDirectionEnum
 function Train:straight(referencePos, towards)
-    logger:debug("straight")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -113,7 +112,6 @@ end
 ---@param initialTowards PositionDirectionEnum
 ---@param swerveMask integer
 function Train:swerve(referencePos, initialTowards, swerveMask)
-    logger:debug("swerve")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -141,6 +139,7 @@ function Train:swerve(referencePos, initialTowards, swerveMask)
 
     local angularVelocity = math.Vector3(0, angularSpeed, 0)
 
+    api.base.removeSurroundMotor(trainBaseEntity)
     api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
 
     api.setTimeout(function()
@@ -149,7 +148,6 @@ function Train:swerve(referencePos, initialTowards, swerveMask)
 end
 
 function Train:intermediateSwerve(referencePos, initialTowards, swerveMask)
-    logger:debug("i - swerve")
     local trainBaseEntity = self.entities.base
 
     self.direction = Common.ternary(swerveMask == 0, (initialTowards - 1 - 1) % 4 + 1,
@@ -175,6 +173,7 @@ function Train:intermediateSwerve(referencePos, initialTowards, swerveMask)
 
     local angularVelocity = math.Vector3(0, angularSpeed, 0)
 
+    api.base.removeSurroundMotor(trainBaseEntity)
     api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
 
     api.setTimeout(function()
@@ -299,7 +298,6 @@ function Train:fault()
 end
 
 function Train:straightFault(referencePos, towards)
-    logger:debug("straight - f")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -317,7 +315,6 @@ function Train:straightFault(referencePos, towards)
 end
 
 function Train:swerveFault(referencePos, initialTowards, swerveMask)
-    logger:debug("swerve - f")
     local trainBaseEntity = self.entities.base
 
     api.base.setEntityPosition(trainBaseEntity, referencePos)
@@ -346,6 +343,7 @@ function Train:swerveFault(referencePos, initialTowards, swerveMask)
 
     local angularVelocity = math.Vector3(0, angularSpeed, 0)
 
+    api.base.removeSurroundMotor(trainBaseEntity)
     api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
 
     api.setTimeout(function()
