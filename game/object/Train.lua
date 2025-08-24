@@ -121,7 +121,7 @@ function Train:swerve(referencePos, initialTowards, swerveMask)
     local initRotation = (initialTowards - 1) * math.pi / 2
     api.base.setRotation(trainBaseEntity, math.Quaternion(0, initRotation, 0))
 
-    local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT / 2
+    local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT
     local angularSpeed = TRAIN_ANGULAR_SPEED
     local centerPos = nil
 
@@ -149,13 +149,13 @@ function Train:swerve(referencePos, initialTowards, swerveMask)
 end
 
 function Train:intermediateSwerve(referencePos, initialTowards, swerveMask)
-    logger:debug("i - straight")
+    logger:debug("i - swerve")
     local trainBaseEntity = self.entities.base
 
     self.direction = Common.ternary(swerveMask == 0, (initialTowards - 1 - 1) % 4 + 1,
         (initialTowards - 1 + 1) % 4 + 1)
 
-    local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT / 2
+    local duration = Global.LOGIC_FRAME_INTERVAL * Global.GAME_GRID_LOOP_FRAME_COUNT
     local angularSpeed = TRAIN_ANGULAR_SPEED
     local centerPos = nil
 

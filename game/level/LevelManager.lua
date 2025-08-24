@@ -43,51 +43,10 @@ local logger = Logger.new("LevelManager")
 
 local instance = nil
 
--- local function createUnitGridRail(grid, row, col, centerPosition)
---     local gridUnitRef = grid[row][col]
---     if gridUnitRef ~= nil then
---         logger:error("This grid unit slot already has a object.")
---         error()
---     end
---     local gridUnit = GridUnitFactory.getInstance(
---         GridUnitClassEnum.RAIL_MOVABLE,
---         { 0, 1, 0, 1 },
---         1,
---         centerPosition
---     )
---     grid[row][col] = gridUnit
---     return gridUnit
--- end
-
-
----comment
----@param grid MovableRail[][]
----@param row integer
----@param col integer
-local function clickMovableGridUnitRail(grid, row, col)
-    local gridUnitRef = grid[row][col]
-    if gridUnitRef:isFixed() then
-        logger:warn("This is a fixed grid unit, skipped.")
-        return
-    end
-    local channelCount = Array.countElement(grid, 1)
-    if channelCount ~= 3 then
-        return
-    end
-    gridUnitRef:mirror()
-end
-
-local function slideMovableGridUnitRail(grid, row, col, slideDirection)
-
-end
-
-
--- constructor =================================================================
-
-
+--- Constructor.
 local function constructor()
-    local createCursorEntity = api.base.getEntityById(GameResource.GAME_GRID_CREATE_CURSOR_ENTITY_ID)
-    api.base.setEntityPosition(createCursorEntity, math.Vector3(0, -50, 0))
+    local normalCursorEntity = api.base.getEntityById(GameResource.GAME_GRID_NORMAL_CURSOR_ENTITY_ID)
+    api.base.setEntityPosition(normalCursorEntity, math.Vector3(0, -50, 0))
 
     local deleteCursorEntity = api.base.getEntityById(GameResource.GAME_GRID_DELETE_CURSOR_ENTITY_ID)
     api.base.setEntityPosition(deleteCursorEntity, math.Vector3(0, -50, 0))
@@ -96,7 +55,7 @@ local function constructor()
         levelFactory = nil,
         levelInstance = nil,
         cursorEntity = {
-            [CursorStatusEnum.CREATE] = createCursorEntity,
+            [CursorStatusEnum.NORMAL] = normalCursorEntity,
             [CursorStatusEnum.DELETE] = deleteCursorEntity,
         },
         currentLevelGridSize = {},
@@ -121,8 +80,6 @@ function LevelManager.instance()
     end
     return instance
 end
-
--- public method ===============================================================
 
 function LevelManager:setLevelFactory(levelFactory)
     self.levelFactory = levelFactory
@@ -247,18 +204,6 @@ local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirect
         or nextGridUnit:isFault()
         or nextGridUnit:isWaiting()
     )
-
-    -- print(nextPosition.row < 1)
-    -- print(nextPosition.row > gridSize.row)
-    -- print(nextPosition.col < 1)
-    -- print(nextPosition.row > gridSize.col)
-
-    -- print(nextGridUnit == nil)
-    -- print(not nextGridUnit:checkEnterPermit(
-    --     Common.directionReverse(forwardDirection[train:getTrainId()])
-    -- ))
-    -- print(nextGridUnit:isFault())
-    -- print(nextGridUnit:isWaiting())
 
     if logicFaultCondition then
         return true
@@ -478,20 +423,28 @@ end
 
 ---@param position Vector3
 function LevelManager:click(position)
+    local GAME_SCENE_CENTER_POSITION = { x = 0, y = 0, z = 0 }
+
     local posX = position.x
     local posZ = position.z
-    local stdX = self.currentLevelGridSize.col / 2 + posX
+
+    local stdX = self.currentLevelGridSize.col * Global.GAME_GRID_SIZE / 2 + (posX - GAME_SCENE_CENTER_POSITION.x)
+
     local clickCol = math.floor(stdX / Global.GAME_GRID_SIZE) + 1
     if clickCol > self.currentLevelGridSize.col or clickCol < 1 then
         self.effectiveClick = false
         return
     end
-    local stdY = self.currentLevelGridSize.row / 2 + posZ
-    local clickRow = self.currentLevelGridSize.row - (math.floor(stdY / Global.GAME_GRID_SIZE))
+
+    local stdZ = self.currentLevelGridSize.row * Global.GAME_GRID_SIZE / 2 - (posZ - GAME_SCENE_CENTER_POSITION.z)
+
+    local clickRow = math.floor(stdZ / Global.GAME_GRID_SIZE) + 1
     if clickRow > self.currentLevelGridSize.row or clickRow < 1 then
         self.effectiveClick = false
         return
     end
+
+    logger:debug("Player click row = " .. clickRow .. ", col = " .. clickCol .. ".")
 
     self.effectiveClick = true
     self.clickPosition = position
@@ -519,6 +472,14 @@ function LevelManager:click(position)
         if targetGridUnit ~= nil then
             targetGridUnit:destroy()
             grid[clickRow][clickCol] = nil
+
+            -- Push grid unit object into operation stack.
+            local operationStatus = {
+                row = clickRow,
+                col = clickCol,
+                gridUnitRef = targetGridUnit
+            }
+            self.operationStack:push(operationStatus)
         end
     else
         -- create cursor
@@ -526,7 +487,7 @@ function LevelManager:click(position)
         if targetGridUnit == nil then
             --create logic
         else
-            targetGridUnit:mirror()
+            -- targetGridUnit:mirror()
         end
     end
 end

@@ -69,14 +69,10 @@ function GridUnit:isFault() end
 
 function GridUnit:setFault() end
 
-function GridUnit:mirror() end
-
 function GridUnit:launch() end
 
 function GridUnit:setLevelManager(levelManager) end
 
-function GridUnit:export() end
-
-function GridUnit:bindInitTrainInstance() end
+function GridUnit:bindInitTrainInstance(trainInstance) end
 
 return GridUnit

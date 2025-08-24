@@ -1,10 +1,10 @@
 -- FixedNormalRail.lua
-local Logger            = require "logger.Logger"
-local Array             = require "util.Array"
-local api               = require "api"
-local Common            = require "util.Common"
-local GameResource      = require "common.GameResource"
-local Global            = require "common.Global"
+local Logger = require "logger.Logger"
+local Array = require "util.Array"
+local api = require "api"
+local Common = require "util.Common"
+local GameResource = require "common.GameResource"
+local Global = require "common.Global"
 
 ---@class FixedNormalRail:GridUnit
 ---@field private initParamData table
@@ -20,10 +20,10 @@ local Global            = require "common.Global"
 ---@field private trainForwardData table[]
 ---@field private startGridUnit boolean
 ---@field private startTrainInstance Train
-local FixedNormalRail   = {}
+local FixedNormalRail = {}
 FixedNormalRail.__index = FixedNormalRail
 
-local logger            = Logger.new("FixedNormalRail")
+local logger = Logger.new("FixedNormalRail")
 
 ---Constructor
 function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, position, extraData, levelManager)
@@ -31,6 +31,7 @@ function FixedNormalRail.new(directionMask, chiralityMask, gridPosition, positio
         directionMask = directionMask,
         chiralityMask = chiralityMask,
         gridPosition = gridPosition,
+        position = position,
         extraData = extraData,
         levelManager = levelManager
     }
@@ -135,20 +136,45 @@ function FixedNormalRail:launch()
 end
 
 function FixedNormalRail:render()
-    local zeroDirection = Array.find(self.directionMask, 0)
-
-    local straightRotation = -(zeroDirection % 2) * math.pi / 2
-    local straightRailEntity = api.base.createEntity(
-        GameResource.RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
-        self.position,
-        math.Quaternion(0, straightRotation, 0),
-        math.Vector3(1, 1, 1)
-    )
-
-    self.associatedEntities.straight = straightRailEntity
-
     local channelCount = Array.countElement(self.directionMask, 1)
-    if channelCount == 3 then
+
+    if channelCount == 2 then
+        local firstSelectChannel = Array.find(self.directionMask, 1)
+
+        if self.directionMask[(firstSelectChannel - 1 + 2) % 4 + 1] == 1 then
+            local zeroDirection = Array.find(self.directionMask, 0)
+            local straightRotation = -(zeroDirection % 2) * math.pi / 2
+
+            self.associatedEntities.straight = api.base.createEntity(
+                GameResource.RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
+                self.position,
+                math.Quaternion(0, straightRotation, 0),
+                math.Vector3(1, 1, 1)
+            )
+        else
+            local cornerRotation = Common.ternary(
+                self.directionMask[(firstSelectChannel - 1 - 1) % 4 + 1] == 1,
+                math.pi / 2 * 3,
+                math.pi / 2 * (firstSelectChannel - 1)
+            )
+            self.associatedEntities.corner = api.base.createEntity(
+                GameResource.RAIL_ENTITY_FIXED_CORNER_PRESET_ID,
+                self.position,
+                math.Quaternion(0, cornerRotation, 0),
+                math.Vector3(1, 1, 1)
+            )
+        end
+    else
+        local zeroDirection = Array.find(self.directionMask, 0)
+
+        local straightRotation = -(zeroDirection % 2) * math.pi / 2
+        self.associatedEntities.straight = api.base.createEntity(
+            GameResource.RAIL_ENTITY_FIXED_STRAIGHT_PRESET_ID,
+            self.position,
+            math.Quaternion(0, straightRotation, 0),
+            math.Vector3(1, 1, 1)
+        )
+
         local cornerRotation = 0
 
         if self.chiralityMask == 0 then
@@ -197,7 +223,7 @@ function FixedNormalRail:onEnter(trainInstance)
 
     local referencePosition = self.position +
         Common.directionToVector(forwardData.enterDirection) * Global.GAME_GRID_SIZE / 2
-    local swerve = forwardData.enterDirection ~= forwardData.forwardDirection
+    local swerve = Common.directionReverse(forwardData.enterDirection) ~= forwardData.forwardDirection
 
     if #self.trainForwardData > 1 then
         self.fault = true
@@ -280,6 +306,10 @@ function FixedNormalRail:bindInitTrainInstance(trainInstance)
     }
 
     table.insert(self.trainForwardData, trainForwardData)
+end
+
+function FixedNormalRail:getDirectionMask()
+    return Array.copy(self.directionMask)
 end
 
 return FixedNormalRail
