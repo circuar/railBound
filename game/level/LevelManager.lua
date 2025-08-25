@@ -430,7 +430,7 @@ function LevelManager:click(position)
 
     local stdX = self.currentLevelGridSize.col * Global.GAME_GRID_SIZE / 2 + (posX - GAME_SCENE_CENTER_POSITION.x)
 
-    local clickCol = math.floor(stdX / Global.GAME_GRID_SIZE) + 1
+    local clickCol = math.tointeger(math.floor(stdX / Global.GAME_GRID_SIZE) + 1)
     if clickCol > self.currentLevelGridSize.col or clickCol < 1 then
         self.effectiveClick = false
         return
@@ -438,13 +438,11 @@ function LevelManager:click(position)
 
     local stdZ = self.currentLevelGridSize.row * Global.GAME_GRID_SIZE / 2 - (posZ - GAME_SCENE_CENTER_POSITION.z)
 
-    local clickRow = math.floor(stdZ / Global.GAME_GRID_SIZE) + 1
+    local clickRow = math.tointeger(math.floor(stdZ / Global.GAME_GRID_SIZE) + 1)
     if clickRow > self.currentLevelGridSize.row or clickRow < 1 then
         self.effectiveClick = false
         return
     end
-
-    logger:debug("Player click row = " .. clickRow .. ", col = " .. clickCol .. ".")
 
     self.effectiveClick = true
     self.clickPosition = position
@@ -471,6 +469,8 @@ function LevelManager:click(position)
         -- delete grid unit
         if targetGridUnit ~= nil then
             targetGridUnit:destroy()
+
+            ---@diagnostic disable-next-line: need-check-nil
             grid[clickRow][clickCol] = nil
 
             -- Push grid unit object into operation stack.
@@ -483,7 +483,7 @@ function LevelManager:click(position)
         end
     else
         -- create cursor
-        self:changeCursor(clickRow, clickCol, CursorStatusEnum.CREATE)
+        self:changeCursor(clickRow, clickCol, CursorStatusEnum.NORMAL)
         if targetGridUnit == nil then
             --create logic
         else
@@ -492,22 +492,24 @@ function LevelManager:click(position)
     end
 end
 
-function LevelManager:undo()
-
-end
-
-function LevelManager:slide(angle)
+function LevelManager:cancelClick(position)
     if self.effectiveClick == false then
         return
     end
-end
 
-function LevelManager:cancelClick()
-    if self.effectiveClick == false then
-        return
-    end
     self.effectiveClick = false
     self:hideCursor()
+
+    local directionVector = position - self.clickPosition
+    if directionVector:length() < 5.0 then
+        return
+    end
+
+    
+end
+
+function LevelManager:undo()
+
 end
 
 return LevelManager

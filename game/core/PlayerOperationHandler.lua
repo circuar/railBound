@@ -1,7 +1,7 @@
 local Logger                   = require "logger.Logger"
 local api                      = require "api"
 local Event                    = require "common.Event"
-local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
+local PositionDirectionEnum    = require "common.enum.PositionDirectionEnum"
 
 ---@class PlayerOperationHandler
 ---@field levelManager LevelManager
@@ -34,10 +34,14 @@ end
 
 function PlayerOperationHandler:registerHandlers()
     api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_TOUCH, function(name, unit, data)
-        self.levelManager:click(data.position)
+        local position = data.position
+        logger:debug("Player game operation: click, position = " .. tostring(position))
+        self.levelManager:click(position)
     end)
     api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_TOUCH_RELEASE, function(name, unit, data)
-        self.levelManager:cancelClick()
+        local position = data.position
+        logger:debug("Player game operation: click release, position = " .. tostring(position))
+        self.levelManager:cancelClick(position)
     end)
 
     --[[
@@ -51,18 +55,21 @@ function PlayerOperationHandler:registerHandlers()
               |
     y+:
     --]]
-    api.base.registerDataEventListener(Event.EVENT_GAME_OPERATION_SLIDE, function(name, unit, data)
-        local angle = data.angle
-        if angle > 30 and angle <= 120 then
-            self.levelManager:slide(PositionDirectionEnum.TOP)
-        elseif angle > 120 and angle <= 210 then
-            self.levelManager:slide(PositionDirectionEnum.LEFT)
-        elseif angle > 210 and angle <= 300 then
-            self.levelManager:slide(PositionDirectionEnum.BOTTOM)
-        else
-            self.levelManager:slide(PositionDirectionEnum.RIGHT)
-        end
-    end)
+    -- api.base.registerDataEventListener(Event.EVENT_GAME_SLIDE_OPERATION, function(name, unit, data)
+    --     local angle = data.angle
+
+    --     logger:debug("Player game operation: slide, angle = " .. angle)
+
+    --     if angle > 30 and angle <= 120 then
+    --         self.levelManager:slide(PositionDirectionEnum.TOP)
+    --     elseif angle > 120 and angle <= 210 then
+    --         self.levelManager:slide(PositionDirectionEnum.LEFT)
+    --     elseif angle > 210 and angle <= 300 then
+    --         self.levelManager:slide(PositionDirectionEnum.BOTTOM)
+    --     else
+    --         self.levelManager:slide(PositionDirectionEnum.RIGHT)
+    --     end
+    -- end)
 end
 
 return PlayerOperationHandler
