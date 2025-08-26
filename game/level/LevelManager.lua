@@ -7,15 +7,13 @@ local api = require "api"
 local GameResource = require "common.GameResource"
 local CursorStatusEnum = require "common.enum.CursorStatusEnum"
 local Array = require "util.Array"
-local GridUnitFactory = require "game.level.GridUnitFactory"
-local GridUnitClassEnum = require "common.enum.GridUnitClassEnum"
-local Train = require "game.object.Train"
-local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 local Common = require "util.Common"
 local FrameTimer = require "game.core.FrameTimer"
 local LevelMetaDataManager = require "game.level.LevelMetaDataManager"
 local GameUIRunBtnStatusEnum = require "common.enum.GameUIRunBtnStatusEnum"
 local TrainTypeEnum = require "common.enum.TrainTypeEnum"
+local MovableRail = require "game.object.grid.MovableRail"
+local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 
 
 ---@class LevelManager
@@ -87,8 +85,9 @@ end
 
 function LevelManager:changeCursor(row, col, status)
     local centerX = (col - 0.5 - self.currentLevelGridSize.col / 2) * Global.GAME_GRID_SIZE
-    local centerZ = (row - 0.5 - self.currentLevelGridSize.row / 2) * Global.GAME_GRID_SIZE
+    local centerZ = -(row - 0.5 - self.currentLevelGridSize.row / 2) * Global.GAME_GRID_SIZE
     api.base.setEntityPosition(self.cursorEntity[status], math.Vector3(centerX, -20, centerZ))
+
     for key, cursorEntity in pairs(self.cursorEntity) do
         if key ~= status then
             api.base.setEntityPosition(cursorEntity, math.Vector3(0, -50, 0))
@@ -421,25 +420,61 @@ function LevelManager:trainFailedSignal(failedTrainInstance)
     end
 end
 
+---Obtain the path mask in the four directions of the specified GridUnit.
+---@param grid GridUnit[][]
+---@param rowSize integer
+---@param colSize integer
+---@param row integer
+---@param col integer
+local function getGridUnitAroundChannelMask(grid, rowSize, colSize, row, col)
+    local topMask = 0
+    local rightMask = 0
+    local bottomMask = 0
+    local leftMask = 0
+
+    if row > 1 and grid[row - 1][col]:getDirectionMask()[PositionDirectionEnum.BOTTOM] == 1 then
+        topMask = 1
+    end
+
+    if row < rowSize and grid[row + 1][col]:getDirectionMask()[PositionDirectionEnum.TOP] == 1 then
+        bottomMask = 1
+    end
+
+    if col > 1 and grid[row][col - 1]:getDirectionMask()[PositionDirectionEnum.RIGHT] == 1 then
+        leftMask = 1
+    end
+
+    if col < colSize and grid[row][col + 1]:getDirectionMask()[PositionDirectionEnum.LEFT] == 1 then
+        rightMask = 1
+    end
+
+    return { topMask, rightMask, bottomMask, leftMask }
+end
+
+
 ---@param position Vector3
 function LevelManager:click(position)
     local GAME_SCENE_CENTER_POSITION = { x = 0, y = 0, z = 0 }
 
+    local rowSize = self.levelInstance.gridRowSize
+    local colSize = self.levelInstance.gridColSize
+
+
     local posX = position.x
     local posZ = position.z
 
-    local stdX = self.currentLevelGridSize.col * Global.GAME_GRID_SIZE / 2 + (posX - GAME_SCENE_CENTER_POSITION.x)
+    local stdX = colSize * Global.GAME_GRID_SIZE / 2 + (posX - GAME_SCENE_CENTER_POSITION.x)
 
     local clickCol = math.tointeger(math.floor(stdX / Global.GAME_GRID_SIZE) + 1)
-    if clickCol > self.currentLevelGridSize.col or clickCol < 1 then
+    if clickCol > colSize or clickCol < 1 then
         self.effectiveClick = false
         return
     end
 
-    local stdZ = self.currentLevelGridSize.row * Global.GAME_GRID_SIZE / 2 - (posZ - GAME_SCENE_CENTER_POSITION.z)
+    local stdZ = rowSize * Global.GAME_GRID_SIZE / 2 - (posZ - GAME_SCENE_CENTER_POSITION.z)
 
     local clickRow = math.tointeger(math.floor(stdZ / Global.GAME_GRID_SIZE) + 1)
-    if clickRow > self.currentLevelGridSize.row or clickRow < 1 then
+    if clickRow > rowSize or clickRow < 1 then
         self.effectiveClick = false
         return
     end
@@ -453,14 +488,14 @@ function LevelManager:click(position)
 
     local grid = self.levelInstance.grid
 
-    if grid[clickRow][clickRow] ~= nil and grid[clickRow][clickRow]:isFixed() then
+    if grid[clickRow][clickCol] ~= nil and grid[clickRow][clickCol]:isFixed() then
         logger:debug("Click grid unit is fixed, skipped.")
         return
     end
 
     ---@type MovableRail
     ---@diagnostic disable-next-line: assign-type-mismatch
-    local targetGridUnit = grid[clickRow][clickRow]
+    local targetGridUnit = grid[clickRow][clickCol]
 
     if self.deleteMode then
         -- create cursor
@@ -485,9 +520,17 @@ function LevelManager:click(position)
         -- create cursor
         self:changeCursor(clickRow, clickCol, CursorStatusEnum.NORMAL)
         if targetGridUnit == nil then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            local channelMask = getGridUnitAroundChannelMask(grid, rowSize, colSize, clickRow, clickRow)
+
+
+
+
             --create logic
+            -- local createdGridUnit = MovableRail.new(directionMask, chiralityMask, gridPosition, position, extraData,
+            --     levelManager)
         else
-            -- targetGridUnit:mirror()
+            --click operation
         end
     end
 end
@@ -504,8 +547,6 @@ function LevelManager:cancelClick(position)
     if directionVector:length() < 5.0 then
         return
     end
-
-    
 end
 
 function LevelManager:undo()

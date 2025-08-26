@@ -4,7 +4,9 @@ local Train = require "game.object.Train"
 local GridUnit = {}
 GridUnit.__index = GridUnit
 
-function GridUnit:getDirectionMask() end
+---
+---@return PositionDirectionEnum
+function GridUnit:getDirectionMask() return PositionDirectionEnum.CENTER end
 
 --- If the train will enter this unit, you can call this method to know which
 --- output grid unit will be next used.
