@@ -6,7 +6,7 @@ function OperationStack.new()
     local self = setmetatable({
         stack = {},
         stackPointer = 0,
-    })
+    }, OperationStack)
     return self
 end
 
@@ -20,8 +20,8 @@ function OperationStack:pop()
         return nil
     end
 
-    local elem = table.remove(self.stack, self.stackPointer)
-    self.stackPointer  = self.stackPointer -1
+    local elem        = table.remove(self.stack, self.stackPointer)
+    self.stackPointer = self.stackPointer - 1
     return elem
 end
 

@@ -71,16 +71,20 @@ local function initObjectField(levelInfo)
         gridLineEntityList = {},
     }
     -- init grid
-    for rowIndex, row in ipairs(self.gridData) do
+    -- for rowIndex, row in ipairs(self.gridData) do
+    for rowIndex = 1, self.gridRowSize do
         -- initialize two-dimensional array
         self.grid[rowIndex] = {}
         self.gridPositionMap[rowIndex] = {}
 
-        for colIndex, colElemData in ipairs(row) do
+        -- for colIndex, colElemData in ipairs(row) do
+        for colIndex = 1, self.gridColSize do
+            local colElemData = self.gridData[rowIndex][colIndex]
+
             local position = calcUnitPosition(rowIndex, colIndex, self.gridRowSize, self.gridColSize)
             self.gridPositionMap[rowIndex][colIndex] = position
 
-            if colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
+            if colElemData ~= nil and colElemData.gridUnitType ~= GridUnitClassEnum.EMPTY then
                 local gridUnitInstance = GridUnitFactory.getInstance(
                     colElemData.gridUnitType,
                     colElemData.directionMask,

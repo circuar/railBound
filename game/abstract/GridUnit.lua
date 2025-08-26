@@ -4,7 +4,8 @@ local Train = require "game.object.Train"
 local GridUnit = {}
 GridUnit.__index = GridUnit
 
----
+function GridUnit:getChiralityMask() end
+
 ---@return PositionDirectionEnum
 function GridUnit:getDirectionMask() return PositionDirectionEnum.CENTER end
 

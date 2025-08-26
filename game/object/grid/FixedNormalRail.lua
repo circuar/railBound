@@ -313,4 +313,8 @@ function FixedNormalRail:getDirectionMask()
     return Array.copy(self.directionMask)
 end
 
+function FixedNormalRail:getChiralityMask()
+    return self.chiralityMask
+end
+
 return FixedNormalRail

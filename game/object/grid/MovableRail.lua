@@ -3,6 +3,7 @@ local Array = require "util.Array"
 local api = require "api"
 local Common = require "util.Common"
 local Global = require "common.Global"
+local GameResource = require "common.GameResource"
 
 ---@class MovableRail:GridUnit
 ---@field initParamData table
@@ -43,13 +44,15 @@ function MovableRail.new(directionMask, chiralityMask, gridPosition, position, e
         initParamData = initParamData,
         position = math.Vector3(position.x, position.y, position.z),
         directionMask = Array.copy(directionMask),
+        associatedEntities = {},
         gridPosition = { row = gridPosition.row, col = gridPosition.col },
         chiralityMask = chiralityMask,
         trainList = {},
         blocking = false,
         fault = false,
         waiting = false,
-        trainForwardData = {}
+        trainForwardData = {},
+
     }, MovableRail)
     return self
 end
@@ -61,6 +64,10 @@ end
 
 function MovableRail:checkEnterPermit(enterDirection)
     return self.directionMask[enterDirection] == 1
+end
+
+function MovableRail:getChiralityMask()
+    return self.chiralityMask
 end
 
 function MovableRail:destroy()
@@ -180,7 +187,7 @@ function MovableRail:onEnter(trainInstance)
 end
 
 function MovableRail:onIntermediate()
-    
+
 end
 
 function MovableRail:onLeave()
@@ -188,19 +195,72 @@ function MovableRail:onLeave()
 end
 
 function MovableRail:preEnter(trainInstance, enterDirection)
-    
+
 end
 
 function MovableRail:preSignal()
-    
+
 end
 
 function MovableRail:render()
+    local channelCount = Array.countElement(self.directionMask, 1)
 
+    if channelCount == 2 then
+        local firstSelectChannel = Array.find(self.directionMask, 1)
+
+        if self.directionMask[(firstSelectChannel - 1 + 2) % 4 + 1] == 1 then
+            local zeroDirection = Array.find(self.directionMask, 0)
+            local straightRotation = -(zeroDirection % 2) * math.pi / 2
+
+            self.associatedEntities.straight = api.base.createEntity(
+                GameResource.RAIL_ENTITY_MOVABLE_STRAIGHT_PRESET_ID,
+                self.position,
+                math.Quaternion(0, straightRotation, 0),
+                math.Vector3(1, 1, 1)
+            )
+        else
+            local cornerRotation = Common.ternary(
+                self.directionMask[(firstSelectChannel - 1 - 1) % 4 + 1] == 1,
+                math.pi / 2 * 3,
+                math.pi / 2 * (firstSelectChannel - 1)
+            )
+            self.associatedEntities.corner = api.base.createEntity(
+                GameResource.RAIL_ENTITY_MOVABLE_CORNER_PRESET_ID,
+                self.position,
+                math.Quaternion(0, cornerRotation, 0),
+                math.Vector3(1, 1, 1)
+            )
+        end
+    else
+        local zeroDirection = Array.find(self.directionMask, 0)
+
+        local straightRotation = -(zeroDirection % 2) * math.pi / 2
+        self.associatedEntities.straight = api.base.createEntity(
+            GameResource.RAIL_ENTITY_MOVABLE_STRAIGHT_PRESET_ID,
+            self.position,
+            math.Quaternion(0, straightRotation, 0),
+            math.Vector3(1, 1, 1)
+        )
+
+        local cornerRotation = 0
+
+        if self.chiralityMask == 0 then
+            cornerRotation = (zeroDirection - 1 - 2) % 4 * math.pi / 2
+        else
+            cornerRotation = (zeroDirection - 1 + 1) % 4 * math.pi / 2
+        end
+
+        self.associatedEntities.corner = api.base.createEntity(
+            GameResource.RAIL_ENTITY_MOVABLE_CORNER_PRESET_ID,
+            self.position,
+            math.Quaternion(0, cornerRotation, 0),
+            math.Vector3(1, 1, 1)
+        )
+    end
 end
 
 function MovableRail:reset()
-    
+
 end
 
 function MovableRail:setFault()

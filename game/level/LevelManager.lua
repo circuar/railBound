@@ -432,23 +432,31 @@ local function getGridUnitAroundChannelMask(grid, rowSize, colSize, row, col)
     local bottomMask = 0
     local leftMask = 0
 
-    if row > 1 and grid[row - 1][col]:getDirectionMask()[PositionDirectionEnum.BOTTOM] == 1 then
+    if row > 1 and grid[row - 1][col] ~= nil and grid[row - 1][col]:getDirectionMask()[PositionDirectionEnum.BOTTOM] == 1 then
         topMask = 1
     end
 
-    if row < rowSize and grid[row + 1][col]:getDirectionMask()[PositionDirectionEnum.TOP] == 1 then
+    if row < rowSize and grid[row + 1][col] ~= nil and grid[row + 1][col]:getDirectionMask()[PositionDirectionEnum.TOP] == 1 then
         bottomMask = 1
     end
 
-    if col > 1 and grid[row][col - 1]:getDirectionMask()[PositionDirectionEnum.RIGHT] == 1 then
+    if col > 1 and grid[row][col - 1] ~= nil and grid[row][col - 1]:getDirectionMask()[PositionDirectionEnum.RIGHT] == 1 then
         leftMask = 1
     end
 
-    if col < colSize and grid[row][col + 1]:getDirectionMask()[PositionDirectionEnum.LEFT] == 1 then
+    if col < colSize and grid[row][col + 1] ~= nil and grid[row][col + 1]:getDirectionMask()[PositionDirectionEnum.LEFT] == 1 then
         rightMask = 1
     end
 
     return { topMask, rightMask, bottomMask, leftMask }
+end
+
+---Get the center location coordinates of the gridUnit.
+---@param row integer
+---@param col integer
+---@param levelInstance Level
+local function calcGridUnitCenterPosition(row, col, levelInstance)
+    return levelInstance.gridPositionMap[row][col]
 end
 
 
@@ -523,14 +531,69 @@ function LevelManager:click(position)
             ---@diagnostic disable-next-line: param-type-mismatch
             local channelMask = getGridUnitAroundChannelMask(grid, rowSize, colSize, clickRow, clickRow)
 
+            local xDirChannelCount = channelMask[PositionDirectionEnum.RIGHT] + channelMask[PositionDirectionEnum.LEFT]
+            local zDirChannelCount = channelMask[PositionDirectionEnum.TOP] + channelMask[PositionDirectionEnum.BOTTOM]
 
 
+            local directionMask = nil
 
-            --create logic
-            -- local createdGridUnit = MovableRail.new(directionMask, chiralityMask, gridPosition, position, extraData,
-            --     levelManager)
+            if xDirChannelCount < zDirChannelCount then
+                directionMask = { 1, 0, 1, 0 }
+            else
+                directionMask = { 0, 1, 0, 1 }
+            end
+
+            local createdGridUnit = MovableRail.new(
+                directionMask,
+                1,
+                { row = clickRow, col = clickCol },
+                ---@diagnostic disable-next-line: param-type-mismatch
+                calcGridUnitCenterPosition(clickRow, clickCol, self.levelInstance),
+                {},
+                self
+            )
+
+            ---@diagnostic disable-next-line: need-check-nil
+            grid[clickRow][clickCol] = createdGridUnit
+
+            -- The original null value is stacked.
+            local operationStatus = {
+                row = clickRow,
+                col = clickCol,
+                gridUnitRef = nil
+            }
+            self.operationStack:push(operationStatus)
+
+            createdGridUnit:render()
         else
             --click operation
+            local originalDirectionMask = targetGridUnit:getDirectionMask()
+            local channelCount = Array.countElement(originalDirectionMask, 1)
+
+            if channelCount == 3 then
+                local createdGridUnit = MovableRail.new(
+                    originalDirectionMask,
+                    (targetGridUnit:getChiralityMask() + 1) % 2,
+                    { row = clickRow, col = clickCol },
+                    ---@diagnostic disable-next-line: param-type-mismatch
+                    calcGridUnitCenterPosition(clickRow, clickCol, self.levelInstance),
+                    {},
+                    self
+                )
+
+                ---@diagnostic disable-next-line: need-check-nil
+                grid[clickRow][clickCol] = createdGridUnit
+
+                -- The original null value is stacked.
+                local operationStatus = {
+                    row = clickRow,
+                    col = clickCol,
+                    gridUnitRef = targetGridUnit
+                }
+                self.operationStack:push(operationStatus)
+
+                createdGridUnit:render()
+            end
         end
     end
 end
@@ -544,6 +607,8 @@ function LevelManager:cancelClick(position)
     self:hideCursor()
 
     local directionVector = position - self.clickPosition
+    directionVector.y = 0
+
     if directionVector:length() < 5.0 then
         return
     end
