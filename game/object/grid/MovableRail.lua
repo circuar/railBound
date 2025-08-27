@@ -251,7 +251,7 @@ function MovableRail:render()
         end
 
         self.associatedEntities.corner = api.base.createEntity(
-            GameResource.RAIL_ENTITY_MOVABLE_CORNER_PRESET_ID,
+            GameResource.RAIL_ENTITY_SINGLE_CORNER_PRESET_ID,
             self.position,
             math.Quaternion(0, cornerRotation, 0),
             math.Vector3(1, 1, 1)

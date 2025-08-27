@@ -1,19 +1,21 @@
-local OperationStack = require "game.core.OperationStack"
-local GameUI = require "component.GameUI"
-local Logger = require "logger.Logger"
-local CameraManager = require "component.CameraManager"
-local Global = require "common.Global"
-local api = require "api"
-local GameResource = require "common.GameResource"
-local CursorStatusEnum = require "common.enum.CursorStatusEnum"
-local Array = require "util.Array"
-local Common = require "util.Common"
-local FrameTimer = require "game.core.FrameTimer"
-local LevelMetaDataManager = require "game.level.LevelMetaDataManager"
+local OperationStack         = require "game.core.OperationStack"
+local GameUI                 = require "component.GameUI"
+local Logger                 = require "logger.Logger"
+local CameraManager          = require "component.CameraManager"
+local Global                 = require "common.Global"
+local api                    = require "api"
+local GameResource           = require "common.GameResource"
+local CursorStatusEnum       = require "common.enum.CursorStatusEnum"
+local Array                  = require "util.Array"
+local Common                 = require "util.Common"
+local FrameTimer             = require "game.core.FrameTimer"
+local LevelMetaDataManager   = require "game.level.LevelMetaDataManager"
 local GameUIRunBtnStatusEnum = require "common.enum.GameUIRunBtnStatusEnum"
-local TrainTypeEnum = require "common.enum.TrainTypeEnum"
-local MovableRail = require "game.object.grid.MovableRail"
-local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
+local TrainTypeEnum          = require "common.enum.TrainTypeEnum"
+local MovableRail            = require "game.object.grid.MovableRail"
+local PositionDirectionEnum  = require "common.enum.PositionDirectionEnum"
+local Vector                 = require "util.Vector"
+local Event                  = require "common.Event"
 
 
 ---@class LevelManager
@@ -26,6 +28,7 @@ local PositionDirectionEnum = require "common.enum.PositionDirectionEnum"
 ---@field clickGrid table
 ---@field operationStack OperationStack
 ---@field deleteMode boolean
+---@field modeSwitchMutex boolean
 ---@field levelRunning boolean
 ---@field trainFaultArray Train[]
 ---@field hinderTrainFinalArray Train[]
@@ -62,6 +65,7 @@ local function constructor()
         clickGrid = {},
         operationStack = OperationStack.new(),
         deleteMode = false,
+        modeSwitchMutex = false,
         levelRunning = false,
         trainFaultArray = {},
         hinderTrainFinalArray = {},
@@ -69,6 +73,10 @@ local function constructor()
         trainWaitArray = {},
         trainGroupSuccessArray = {}
     }, LevelManager)
+
+    self:registerEventListener()
+
+
     return self
 end
 
@@ -77,6 +85,24 @@ function LevelManager.instance()
         instance = constructor()
     end
     return instance
+end
+
+function LevelManager:registerEventListener()
+    -- delete / create mode
+    api.base.registerEventListener(Event.EVENT_GAME_OPERATION_DELETE_MODE, function()
+        if self.modeSwitchMutex then
+            return
+        end
+        self:setDeleteMode(true)
+        GameUI.enableGameDeleteMode()
+    end)
+    api.base.registerEventListener(Event.EVENT_GAME_OPERATION_CREATE_MODE, function()
+        if self.modeSwitchMutex then
+            return
+        end
+        self:setDeleteMode(false)
+        GameUI.disableGameDeleteMode()
+    end)
 end
 
 function LevelManager:setLevelFactory(levelFactory)
@@ -150,12 +176,13 @@ end
 ---comment
 ---@param status boolean
 function LevelManager:setDeleteMode(status)
-    self.deleteMode = status
+    logger:info("Set delete mode status: " .. tostring(status))
     if status then
-        GameUI.showDeleteUIBorder()
+        GameUI.enableGameDeleteMode()
     else
-        GameUI.hideDeleteUIBorder()
+        GameUI.disableGameDeleteMode()
     end
+    self.deleteMode = status
 end
 
 function LevelManager:unLoadLevel()
@@ -451,6 +478,65 @@ local function getGridUnitAroundChannelMask(grid, rowSize, colSize, row, col)
     return { topMask, rightMask, bottomMask, leftMask }
 end
 
+
+---@param grid GridUnit[][]
+---@param row integer
+---@param col integer
+local function getGridUnitLinkedChannelMask(grid, rowSize, colSize, row, col)
+    local centerGridUnit = grid[row][col]
+    local centerDirectionMask = centerGridUnit:getDirectionMask()
+
+    local outerChannelMask = getGridUnitAroundChannelMask(grid, rowSize, colSize, row, col)
+
+    local result = {}
+
+    for i = 1, 4 do
+        if centerDirectionMask[i] == 1 and outerChannelMask[i] == 1 then
+            result[i] = 1
+        else
+            result[i] = 0
+        end
+    end
+
+    return result
+end
+
+local function reconstructDirectionMask(originalDirectionMask, linkedChannelMask, requestDirection)
+    local directionMask = Array.copy(originalDirectionMask)
+
+    if directionMask[requestDirection] == 1 then
+        return directionMask
+    end
+
+
+    local currentChannelCount = Array.countElement(directionMask, 1)
+
+    -- Reassignment logic.
+    if currentChannelCount == 2 then
+        local linkedChannelCount = Array.countElement(linkedChannelMask, 1) --1
+        if linkedChannelCount == 0 then
+            directionMask = { 0, 0, 0, 0 }
+            directionMask[requestDirection] = 1
+            directionMask[Common.directionReverse(requestDirection)] = 1
+        elseif linkedChannelCount == 1 then
+            local linkedChannel = Array.find(linkedChannelMask, 1)
+            directionMask = { 0, 0, 0, 0 }
+            directionMask[requestDirection] = 1
+            directionMask[linkedChannel] = 1
+        else
+            directionMask[requestDirection] = 1
+        end
+    else
+        directionMask[(requestDirection - 1 + 1) % 4 + 1] = 0
+        directionMask[requestDirection] = 1
+    end
+
+    logger:debug("Reconstruct direction mask: { " ..
+        directionMask[1] .. ", " .. directionMask[2] .. ", " .. directionMask[3] .. ", " .. directionMask[4] .. " }.")
+
+    return directionMask
+end
+
 ---Get the center location coordinates of the gridUnit.
 ---@param row integer
 ---@param col integer
@@ -459,10 +545,11 @@ local function calcGridUnitCenterPosition(row, col, levelInstance)
     return levelInstance.gridPositionMap[row][col]
 end
 
-
 ---@param position Vector3
 function LevelManager:click(position)
     local GAME_SCENE_CENTER_POSITION = { x = 0, y = 0, z = 0 }
+
+    self.modeSwitchMutex = true
 
     local rowSize = self.levelInstance.gridRowSize
     local colSize = self.levelInstance.gridColSize
@@ -487,6 +574,12 @@ function LevelManager:click(position)
         return
     end
 
+    self:changeCursor(
+        clickRow,
+        clickCol,
+        Common.ternary(self.deleteMode, CursorStatusEnum.DELETE, CursorStatusEnum.NORMAL)
+    )
+
     self.effectiveClick = true
     self.clickPosition = position
     self.clickGrid = { row = clickRow, col = clickCol }
@@ -506,34 +599,30 @@ function LevelManager:click(position)
     local targetGridUnit = grid[clickRow][clickCol]
 
     if self.deleteMode then
-        -- create cursor
-        self:changeCursor(clickRow, clickCol, CursorStatusEnum.DELETE)
-
         -- delete grid unit
-        if targetGridUnit ~= nil then
-            targetGridUnit:destroy()
-
-            ---@diagnostic disable-next-line: need-check-nil
-            grid[clickRow][clickCol] = nil
-
-            -- Push grid unit object into operation stack.
-            local operationStatus = {
-                row = clickRow,
-                col = clickCol,
-                gridUnitRef = targetGridUnit
-            }
-            self.operationStack:push(operationStatus)
+        if targetGridUnit == nil then
+            return
         end
+
+        targetGridUnit:destroy()
+
+        ---@diagnostic disable-next-line: need-check-nil
+        grid[clickRow][clickCol] = nil
+
+        -- Push grid unit object into operation stack.
+        local operationStatus = {
+            row = clickRow,
+            col = clickCol,
+            gridUnitRef = targetGridUnit
+        }
+        self.operationStack:push(operationStatus)
     else
-        -- create cursor
-        self:changeCursor(clickRow, clickCol, CursorStatusEnum.NORMAL)
         if targetGridUnit == nil then
             ---@diagnostic disable-next-line: param-type-mismatch
-            local channelMask = getGridUnitAroundChannelMask(grid, rowSize, colSize, clickRow, clickRow)
+            local channelMask = getGridUnitAroundChannelMask(grid, rowSize, colSize, clickRow, clickCol)
 
             local xDirChannelCount = channelMask[PositionDirectionEnum.RIGHT] + channelMask[PositionDirectionEnum.LEFT]
             local zDirChannelCount = channelMask[PositionDirectionEnum.TOP] + channelMask[PositionDirectionEnum.BOTTOM]
-
 
             local directionMask = nil
 
@@ -556,7 +645,6 @@ function LevelManager:click(position)
             ---@diagnostic disable-next-line: need-check-nil
             grid[clickRow][clickCol] = createdGridUnit
 
-            -- The original null value is stacked.
             local operationStatus = {
                 row = clickRow,
                 col = clickCol,
@@ -584,7 +672,6 @@ function LevelManager:click(position)
                 ---@diagnostic disable-next-line: need-check-nil
                 grid[clickRow][clickCol] = createdGridUnit
 
-                -- The original null value is stacked.
                 local operationStatus = {
                     row = clickRow,
                     col = clickCol,
@@ -592,6 +679,7 @@ function LevelManager:click(position)
                 }
                 self.operationStack:push(operationStatus)
 
+                targetGridUnit:destroy()
                 createdGridUnit:render()
             end
         end
@@ -599,6 +687,8 @@ function LevelManager:click(position)
 end
 
 function LevelManager:cancelClick(position)
+    self.modeSwitchMutex = false
+
     if self.effectiveClick == false then
         return
     end
@@ -606,11 +696,111 @@ function LevelManager:cancelClick(position)
     self.effectiveClick = false
     self:hideCursor()
 
+    if self.deleteMode then
+        return
+    end
+
     local directionVector = position - self.clickPosition
     directionVector.y = 0
 
     if directionVector:length() < 5.0 then
         return
+    end
+
+    local slidDirection = Vector.getVectorOrthogonalDirection(directionVector)
+    local rowSize = self.levelInstance.gridRowSize
+    local colSize = self.levelInstance.gridColSize
+    local row = self.clickGrid.row
+    local col = self.clickGrid.col
+    local grid = self.levelInstance.grid
+
+    local linkedChannelMask = getGridUnitLinkedChannelMask(grid, rowSize, colSize, row, col)
+
+    if linkedChannelMask[slidDirection] == 1 then
+        return
+    end
+
+    -- center gridUnit operation:
+
+    local directionMask = grid[row][col]:getDirectionMask()
+    local newDirectionMask = reconstructDirectionMask(directionMask, linkedChannelMask, slidDirection)
+
+    if not Array.equals(newDirectionMask, directionMask) then
+        grid[row][col]:destroy()
+
+        local operationStatus = {
+            row = row,
+            col = col,
+            gridUnitRef = grid[row][col]
+        }
+        self.operationStack:push(operationStatus)
+
+        local operationGridUnit = MovableRail.new(
+            newDirectionMask,
+            1,
+            { row = row, col = col },
+            calcGridUnitCenterPosition(row, col, self.levelInstance),
+            {},
+            self
+        )
+        operationGridUnit:render()
+        grid[row][col] = operationGridUnit
+    end
+
+    -- target gridUnit operation:
+
+    local targetGridPos = Common.gridPositionMove(row, col, slidDirection)
+    local boundCondition = (
+        targetGridPos.row > rowSize
+        or targetGridPos.row < 1
+        or targetGridPos.col > colSize
+        or targetGridPos.col < 1
+        or grid[targetGridPos.row][targetGridPos.col] == nil
+    )
+
+    if boundCondition then
+        return
+    end
+
+    if grid[targetGridPos.row][targetGridPos.col]:isFixed() then
+        return
+    end
+
+    local targetGridUnit = grid[targetGridPos.row][targetGridPos.col]
+    local targetDirectionMask = targetGridUnit:getDirectionMask()
+    local targetLinkedChannelMask = getGridUnitLinkedChannelMask(
+        grid,
+        rowSize,
+        colSize,
+        targetGridPos.row,
+        targetGridPos.col
+    )
+    local targetNewDirectionMask = reconstructDirectionMask(
+        targetDirectionMask,
+        targetLinkedChannelMask,
+        Common.directionReverse(slidDirection)
+    )
+
+    if not Array.equals(targetNewDirectionMask, targetDirectionMask) then
+        grid[targetGridPos.row][targetGridPos.col]:destroy()
+
+        local operationStatus = {
+            row = targetGridPos.row,
+            col = targetGridPos.col,
+            gridUnitRef = grid[targetGridPos.row][targetGridPos.col]
+        }
+        self.operationStack:push(operationStatus)
+
+        local operationGridUnit = MovableRail.new(
+            targetNewDirectionMask,
+            1,
+            { row = row, col = col },
+            calcGridUnitCenterPosition(targetGridPos.row, targetGridPos.col, self.levelInstance),
+            {},
+            self
+        )
+        operationGridUnit:render()
+        grid[targetGridPos.row][targetGridPos.col] = operationGridUnit
     end
 end
 

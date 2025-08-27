@@ -6,8 +6,8 @@ GridUnit.__index = GridUnit
 
 function GridUnit:getChiralityMask() end
 
----@return PositionDirectionEnum
-function GridUnit:getDirectionMask() return PositionDirectionEnum.CENTER end
+---@return integer[]
+function GridUnit:getDirectionMask() return {} end
 
 --- If the train will enter this unit, you can call this method to know which
 --- output grid unit will be next used.

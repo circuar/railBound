@@ -316,5 +316,13 @@ function base.setLinearVelocity(entity, velocity)
     entity.set_linear_velocity(velocity)
 end
 
+---Set player UI element opacity.
+---@param player Role
+---@param uiNode string
+---@param opacity number
+function base.setUINodeOpacity(player, uiNode, opacity)
+    player.set_ui_opacity(uiNode, opacity)
+end
+
 api.base = base
 return api

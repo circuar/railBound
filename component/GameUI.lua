@@ -105,12 +105,24 @@ function GameUI.showLevelSwitchAnimOut()
     end, Global.LEVEL_SWITCH_ANIM_IN_OUT_DURATION)
 end
 
-function GameUI.showDeleteUIBorder()
-    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_SHOW_DELETE_UI_BORDER)
+function GameUI.enableGameDeleteMode()
+    api.base.sendUIEvent(
+        api.getSinglePlayer(),
+        Event.UI_GAME_SHOW_DELETE_MODE,
+        {}
+    )
+    api.base.setUINodeOpacity(api.getSinglePlayer(), "1519736575|2098868386", 1.0)
+    api.base.setUINodeOpacity(api.getSinglePlayer(), "1519736575|1385281103", 0.0)
 end
 
-function GameUI.hideDeleteUIBorder()
-    api.base.sendUIEvent(api.getSinglePlayer(), Event.UI_HIDE_DELETE_UI_BORDER)
+function GameUI.disableGameDeleteMode()
+    api.base.sendUIEvent(
+        api.getSinglePlayer(),
+        Event.UI_GAME_HIDE_DELETE_MODE,
+        {}
+    )
+    api.base.setUINodeOpacity(api.getSinglePlayer(), "1519736575|2098868386", 0.0)
+    api.base.setUINodeOpacity(api.getSinglePlayer(), "1519736575|1385281103", 1.0)
 end
 
 return GameUI

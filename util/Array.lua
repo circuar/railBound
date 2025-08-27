@@ -78,7 +78,7 @@ end
 --- @param arr1 any[]
 --- @param arr2 any[]
 --- @return boolean
-function Array:equals(arr1, arr2)
+function Array.equals(arr1, arr2)
     if #arr1 ~= #arr2 then
         return false
     end
