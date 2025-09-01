@@ -15,6 +15,7 @@ local Logger = require "logger.Logger"
 ---@field linearMoverTimers table<integer, SimpleTimer>
 ---@field moverIdCount integer
 ---@field destroyed boolean
+---@field proxyLinearMoverIndex integer
 local LinearMoverComponent = {}
 LinearMoverComponent.__index = LinearMoverComponent
 
@@ -36,19 +37,21 @@ local function recalculateLinearVelocity(linearMoverDataMap)
 end
 
 ---Constructor
-function LinearMoverComponent.new(bindEntity)
+function LinearMoverComponent.new(bindEntity, proxyLinearMoverIndex)
     local self = setmetatable({
         bindEntity = bindEntity,
         linearMoverDataMap = {},
         linearMoverTimers = {},
         moverIdCount = 0,
+        proxyLinearMoverIndex = proxyLinearMoverIndex
     }, LinearMoverComponent)
     return self
 end
 
 function LinearMoverComponent:updateLinearVelocity()
     local reloadVelocity = recalculateLinearVelocity(self.linearMoverDataMap)
-    api.base.setLinearVelocity(self.bindEntity, reloadVelocity)
+    -- api.base.setLinearVelocity(self.bindEntity, reloadVelocity)
+    api.base.setLinearMotorVelocity(self.bindEntity, self.proxyLinearMoverIndex, reloadVelocity, false)
 end
 
 function LinearMoverComponent:getBindEntity()

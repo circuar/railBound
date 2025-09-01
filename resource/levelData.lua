@@ -16,25 +16,12 @@ return {
                 [1] = {},
                 [2] = {},
                 [3] = {},
-                [4] = {
-                    [1] = { gridUnitType = GridUnitTypeEnum.EMPTY, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    [2] = { gridUnitType = GridUnitTypeEnum.EMPTY, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    [3] = { gridUnitType = GridUnitTypeEnum.EMPTY, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    [4] = { gridUnitType = GridUnitTypeEnum.EMPTY, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    [5] = { gridUnitType = GridUnitTypeEnum.EMPTY, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    [6] = { gridUnitType = GridUnitTypeEnum.EMPTY, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    [7] = { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 1, 0 }, chiralityMask = 1, extraData = {} },
-                    [8] = { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 0, 1, 1 }, chiralityMask = 0, extraData = {} },
-                },
+                [4] = {},
                 [5] = {
-                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.EMPTY,             directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 1, 1, 0, 1 }, chiralityMask = 0,   extraData = {} },
-                    { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 1, 0, 0, 1 }, chiralityMask = 1,   extraData = {} },
+                    [1] = { gridUnitType = GridUnitTypeEnum.EMPTY },
+                    [2] = { gridUnitType = GridUnitTypeEnum.EMPTY },
+                    [3] = { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} },
+                    [4] = { gridUnitType = GridUnitTypeEnum.RAIL_NORMAL_FIXED, directionMask = { 0, 1, 0, 1 }, chiralityMask = nil, extraData = {} }
                 },
                 [6] = {},
                 [7] = {},
@@ -50,6 +37,14 @@ return {
                     trainType = "NORMAL",
                     trainGroup = 1,
                     gridPosition = { row = 5, col = 3 },
+                    directionMask = { 0, 0, 0, 1 }
+                },
+                {
+                    trainId = 2,
+                    sequenceId = 2,
+                    trainType = "NORMAL",
+                    trainGroup = 1,
+                    gridPosition = { row = 5, col = 4 },
                     directionMask = { 0, 1, 0, 0 }
                 }
             },

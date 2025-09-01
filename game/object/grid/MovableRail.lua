@@ -77,7 +77,15 @@ function MovableRail:destroy()
 end
 
 function MovableRail:forward(enterDirection)
-    return Common.gridPositionMove(self.gridPosition.row, self.gridPosition.col, self:forwardDirection(enterDirection))
+    local forward = Common.gridPositionMove(
+        self.gridPosition.row,
+        self.gridPosition.col,
+        self:forwardDirection(enterDirection)
+    )
+    print(self.gridPosition.row .. self.gridPosition.col)
+    print(forward.row .. forward.col)
+
+    return forward
 end
 
 ---@param enterDirection PositionDirectionEnum
@@ -187,15 +195,41 @@ function MovableRail:onEnter(trainInstance)
 end
 
 function MovableRail:onIntermediate()
+    local forwardData = self.trainForwardData[1]
+    ---@type Train
+    local trainInstance = forwardData.trainInstance
 
+    local swerve = forwardData.enterDirection ~= nil and
+        Common.directionReverse(forwardData.enterDirection) ~= forwardData.forwardDirection
+
+    if swerve then
+        local referencePosition = self.position +
+            Common.directionToVector(forwardData.enterDirection) * Global.GAME_GRID_SIZE / 2
+        local swerveMask = Common.ternary(
+            (forwardData.enterDirection + 1 - 1) % 4 + 1 == forwardData.forwardDirection, 0, 1)
+        trainInstance:intermediateSwerve(referencePosition, Common.directionReverse(forwardData.enterDirection),
+            swerveMask)
+    else
+        trainInstance:straight(self.position, forwardData.forwardDirection)
+    end
 end
 
 function MovableRail:onLeave()
-
+    self.trainForwardData = {}
 end
 
 function MovableRail:preEnter(trainInstance, enterDirection)
+    local trainForwardData = {
+        trainId = trainInstance:getTrainId(),
+        trainInstance = trainInstance,
+        enterDirection = enterDirection,
+        forwardDirection = self:forwardDirection(enterDirection)
+    }
 
+    table.insert(self.trainForwardData, trainForwardData)
+
+    logger:debug("Train will enter this grid unit. GridPosition: " ..
+        tostring(self.gridPosition) .. ", trainId: " .. trainInstance:getTrainId() .. ".")
 end
 
 function MovableRail:preSignal()

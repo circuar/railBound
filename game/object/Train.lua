@@ -105,6 +105,7 @@ function Train:straight(referencePos, towards)
     local duration = Global.GAME_GRID_SIZE / 2 / TRAIN_LINEAR_SPEED
 
     -- api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
+    self:stop()
     self.linearMotorProxy:addLinearMover(velocity, duration)
 end
 
@@ -139,7 +140,7 @@ function Train:swerve(referencePos, initialTowards, swerveMask)
 
     local angularVelocity = math.Vector3(0, angularSpeed, 0)
 
-    api.base.removeSurroundMotor(trainBaseEntity)
+    self:stop()
     api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
 
     api.setTimeout(function()
@@ -173,7 +174,7 @@ function Train:intermediateSwerve(referencePos, initialTowards, swerveMask)
 
     local angularVelocity = math.Vector3(0, angularSpeed, 0)
 
-    api.base.removeSurroundMotor(trainBaseEntity)
+    self:stop()
     api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
 
     api.setTimeout(function()
@@ -268,11 +269,11 @@ function Train:render()
     -- api.base.setEntityPosition(base, self.initPosition)
 
     self.entities.base = base
-    self.linearMotorProxy = LinearMoverComponent.new(base)
+    self.linearMotorProxy = LinearMoverComponent.new(base, 0)
 end
 
 function Train:destroy()
-    self.linearMotorProxy:removeAllLinearMover()
+    self:stop()
     for key, entity in pairs(self.entities) do
         api.base.destroyEntity(entity)
     end
@@ -311,6 +312,7 @@ function Train:straightFault(referencePos, towards)
     local duration = (Global.GAME_GRID_SIZE - TRAIN_MODEL_LENGTH) / 2 / TRAIN_LINEAR_SPEED
 
     -- api.base.addLinearMotor(trainBaseEntity, velocity, duration, false)
+    self:stop()
     self.linearMotorProxy:addLinearMover(velocity, duration)
 end
 
@@ -343,7 +345,7 @@ function Train:swerveFault(referencePos, initialTowards, swerveMask)
 
     local angularVelocity = math.Vector3(0, angularSpeed, 0)
 
-    api.base.removeSurroundMotor(trainBaseEntity)
+    self:stop()
     api.base.addSurroundMotor(trainBaseEntity, centerEntity, angularVelocity, duration, true)
 
     api.setTimeout(function()

@@ -103,6 +103,13 @@ function LevelManager:registerEventListener()
         self:setDeleteMode(false)
         GameUI.disableGameDeleteMode()
     end)
+    api.base.registerEventListener(Event.EVENT_GAME_RUN_LEVEL, function()
+        if self.levelRunning then
+            logger:debug("Level already running, skipped.")
+            return
+        end
+        self:runLevel()
+    end)
 end
 
 function LevelManager:setLevelFactory(levelFactory)
@@ -244,6 +251,8 @@ local function checkTrainWillFault(grid, gridSize, train, forward, forwardDirect
 end
 
 function LevelManager:runLevel()
+    self.levelRunning = true
+
     local trains = self.levelInstance.trains
     local intermediateTimeSlice = false
     local grid = self.levelInstance.grid
@@ -347,6 +356,8 @@ function LevelManager:runLevel()
                 local nextEnterDirection = Common.directionReverse(forwardDirection[trainId])
                 local nextGridPosition = currentGridUnit:forward(nextEnterDirection)
                 local nextGridUnit = grid[nextGridPosition.row][nextGridPosition.col]
+
+
 
                 if nextGridUnit:isBlocking() then
                     currentGridUnit:wait()
@@ -547,13 +558,12 @@ end
 
 ---@param position Vector3
 function LevelManager:click(position)
-    local GAME_SCENE_CENTER_POSITION = { x = 0, y = 0, z = 0 }
-
     self.modeSwitchMutex = true
+
+    local GAME_SCENE_CENTER_POSITION = { x = 0, y = 0, z = 0 }
 
     local rowSize = self.levelInstance.gridRowSize
     local colSize = self.levelInstance.gridColSize
-
 
     local posX = position.x
     local posZ = position.z
@@ -725,7 +735,7 @@ function LevelManager:cancelClick(position)
     local directionMask = grid[row][col]:getDirectionMask()
     local newDirectionMask = reconstructDirectionMask(directionMask, linkedChannelMask, slidDirection)
 
-    if not Array.equals(newDirectionMask, directionMask) then
+    if grid[row][col] ~= nil and not grid[row][col]:isFixed() and not Array.equals(newDirectionMask, directionMask) then
         grid[row][col]:destroy()
 
         local operationStatus = {
@@ -794,7 +804,7 @@ function LevelManager:cancelClick(position)
         local operationGridUnit = MovableRail.new(
             targetNewDirectionMask,
             1,
-            { row = row, col = col },
+            { row = targetGridPos.row, col = targetGridPos.col },
             calcGridUnitCenterPosition(targetGridPos.row, targetGridPos.col, self.levelInstance),
             {},
             self
